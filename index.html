@@ -169,6 +169,7 @@
       <button id="nav-rankings" onclick="setView('rankings')" class="nav-pill px-4 py-1.5 rounded-full text-sm font-semibold transition">My Rankings</button>
       <button id="nav-collections" onclick="setView('collections')" class="nav-pill px-4 py-1.5 rounded-full text-sm font-semibold transition">Collections</button>
       <button id="nav-discover" onclick="setView('discover')" class="nav-pill px-4 py-1.5 rounded-full text-sm font-semibold transition">Discover</button>
+      <button id="nav-insights" onclick="setView('insights')" class="nav-pill px-4 py-1.5 rounded-full text-sm font-semibold transition">Insights</button>
     </nav>
 
     <!-- Right Controls -->
@@ -193,6 +194,7 @@
     <button id="mnav-rankings" onclick="setView('rankings')" class="mnav-pill flex-1 py-1.5 rounded-lg text-xs font-semibold transition">My Rankings</button>
     <button id="mnav-collections" onclick="setView('collections')" class="mnav-pill flex-1 py-1.5 rounded-lg text-xs font-semibold transition">Collections</button>
     <button id="mnav-discover" onclick="setView('discover')" class="mnav-pill flex-1 py-1.5 rounded-lg text-xs font-semibold transition">Discover</button>
+    <button id="mnav-insights" onclick="setView('insights')" class="mnav-pill flex-1 py-1.5 rounded-lg text-xs font-semibold transition">Insights</button>
   </div>
 </header>
 
@@ -235,23 +237,64 @@
       </button>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-1.5" id="rank-col-filters">
-        <button data-col="all" onclick="setRankFilter('all')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">All Ranked</button>
-        <button data-col="have" onclick="setRankFilter('have')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I have</button>
-        <button data-col="had" onclick="setRankFilter('had')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I had</button>
-        <button data-col="want" onclick="setRankFilter('want')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I want</button>
-        <button data-col="tried" onclick="setRankFilter('tried')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I've tried</button>
+    <!-- Filter Bar (v2 Full Filters + Randomize + Top 5 Card) -->
+    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div class="flex flex-wrap items-center gap-1.5" id="rank-col-filters">
+          <button data-col="all" onclick="setRankFilter('all')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">All Ranked</button>
+          <button data-col="have" onclick="setRankFilter('have')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I have</button>
+          <button data-col="had" onclick="setRankFilter('had')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I had</button>
+          <button data-col="want" onclick="setRankFilter('want')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I want</button>
+          <button data-col="tried" onclick="setRankFilter('tried')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I've tried</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="randomizeFromView('rankings')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition" title="Pick a random fragrance from your current filtered rankings">🎲 Randomize</button>
+          <button onclick="openTop5CardModal()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E6F2F1] text-[#0F5C5C] border border-[#B9DDD9] hover:bg-[#D4EAE7] transition" title="Generate a shareable Top 5 image card">📸 Top 5 Card</button>
+          <button onclick="toggleFilterPanel('rank')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">Filters ▾</button>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <input id="rank-search" type="text" oninput="renderRankings()" placeholder="Filter your rankings…" class="w-full sm:w-52 px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] focus:outline-none focus:border-[#0F5C5C]" />
+
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="rank-search" type="text" oninput="renderRankings()" placeholder="Search name, brand, note, accord…" class="flex-1 min-w-[180px] px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] focus:outline-none focus:border-[#0F5C5C]" />
         <select id="rank-tier-filter" onchange="renderRankings()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
           <option value="all">All Tiers</option>
           <option value="love">Loved (7.5–10)</option>
           <option value="like">Liked (4.5–7.4)</option>
           <option value="dislike">Didn't Like (0–4.4)</option>
         </select>
+        <select id="rank-sort" onchange="renderRankings()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="rank">Sort: My Rank</option>
+          <option value="community">Sort: Community Rating</option>
+          <option value="longevity">Sort: Longevity</option>
+          <option value="sillage">Sort: Sillage</option>
+          <option value="year">Sort: Release Year</option>
+        </select>
+      </div>
+
+      <!-- Expandable Advanced Filters -->
+      <div id="rank-adv-filters" class="hidden pt-2.5 border-t border-[#F0EDE6] flex flex-wrap items-center gap-2">
+        <select id="rf-gender" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Gender</option><option value="unisex">Unisex</option><option value="male">Male</option><option value="female">Female</option>
+        </select>
+        <select id="rf-season" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Season</option><option value="winter">Winter</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option>
+        </select>
+        <select id="rf-occasion" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
+        </select>
+        <select id="rf-rating" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+        </select>
+        <select id="rf-longevity" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
+        </select>
+        <select id="rf-sillage" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Sillage</option><option value="intimate">Intimate (&lt;1.5)</option><option value="moderate">Moderate (1.5–2.5)</option><option value="strong">Strong+ (2.5+)</option><option value="enormous">Enormous (3.3+)</option>
+        </select>
+        <select id="rf-price" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Price Value</option><option value="3.5">Good Value (3.5+)</option><option value="4.2">Great Value (4.2+)</option>
+        </select>
+        <button onclick="resetAdvancedFilters('rf', renderRankings)" class="ml-auto text-xs font-semibold text-[#C25447] hover:underline">Reset</button>
       </div>
     </div>
 
@@ -261,26 +304,62 @@
 
   <!-- ==================== VIEW 2: COLLECTIONS ==================== -->
   <section id="view-collections" class="hidden space-y-5 animate-in">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <button data-tab="have" onclick="setCollectionTab('have')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I have <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
-        <button data-tab="had" onclick="setCollectionTab('had')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I had <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
-        <button data-tab="want" onclick="setCollectionTab('want')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I want <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
-        <button data-tab="tried" onclick="setCollectionTab('tried')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I've tried <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
+    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <button data-tab="have" onclick="setCollectionTab('have')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I have <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
+          <button data-tab="had" onclick="setCollectionTab('had')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I had <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
+          <button data-tab="want" onclick="setCollectionTab('want')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I want <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
+          <button data-tab="tried" onclick="setCollectionTab('tried')" class="ctab-btn px-4 py-2 rounded-full text-sm font-semibold border transition flex items-center gap-2">I've tried <span class="ctab-cnt text-xs px-1.5 py-0.5 rounded-full bg-black/10">0</span></button>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="randomizeFromView('collections')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition" title="Pick a random fragrance from your current filtered collection">🎲 Randomize</button>
+          <button onclick="toggleFilterPanel('col')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">Filters ▾</button>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <select id="col-rated-filter" onchange="renderCollections()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-white font-medium focus:outline-none focus:border-[#0F5C5C]">
-          <option value="all">Rated & Unrated</option>
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="col-search" type="text" oninput="renderCollections()" placeholder="Search collection by name, brand, note, accord…" class="flex-1 min-w-[180px] px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] focus:outline-none focus:border-[#0F5C5C]" />
+        <select id="col-rated-filter" onchange="renderCollections()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="all">Rated &amp; Unrated</option>
           <option value="rated">Rated Only</option>
           <option value="unrated">Unrated Only</option>
         </select>
-        <select id="col-sort" onchange="renderCollections()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-white font-medium focus:outline-none focus:border-[#0F5C5C]">
+        <select id="col-sort" onchange="renderCollections()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
           <option value="rank">Sort: My Rank</option>
           <option value="recent">Sort: Recently Added</option>
           <option value="community">Sort: Community Rating</option>
+          <option value="longevity">Sort: Longevity</option>
+          <option value="sillage">Sort: Sillage</option>
+          <option value="year">Sort: Release Year</option>
           <option value="name">Sort: Name A–Z</option>
         </select>
+      </div>
+
+      <div id="col-adv-filters" class="hidden pt-2.5 border-t border-[#F0EDE6] flex flex-wrap items-center gap-2">
+        <select id="cf-gender" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Gender</option><option value="unisex">Unisex</option><option value="male">Male</option><option value="female">Female</option>
+        </select>
+        <select id="cf-season" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Season</option><option value="winter">Winter</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option>
+        </select>
+        <select id="cf-occasion" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
+        </select>
+        <select id="cf-rating" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+        </select>
+        <select id="cf-longevity" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
+        </select>
+        <select id="cf-sillage" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Sillage</option><option value="intimate">Intimate (&lt;1.5)</option><option value="moderate">Moderate (1.5–2.5)</option><option value="strong">Strong+ (2.5+)</option><option value="enormous">Enormous (3.3+)</option>
+        </select>
+        <select id="cf-price" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Price Value</option><option value="3.5">Good Value (3.5+)</option><option value="4.2">Great Value (4.2+)</option>
+        </select>
+        <button onclick="resetAdvancedFilters('cf', renderCollections)" class="ml-auto text-xs font-semibold text-[#C25447] hover:underline">Reset</button>
       </div>
     </div>
 
@@ -332,6 +411,154 @@
       <button onclick="loadMoreDiscover()" class="px-6 py-2.5 rounded-full text-sm font-semibold bg-white border border-[#D8D3C8] text-[#1C1B18] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition shadow-sm">Load More Fragrances</button>
     </div>
   </section>
+
+  <!-- ==================== VIEW 4: INSIGHTS (DNA, FOR YOU, COMPARE, WARDROBE, SOTD) ==================== -->
+  <section id="view-insights" class="hidden space-y-5 animate-in">
+    <!-- Sub-Navigation Pills -->
+    <div class="flex flex-wrap items-center gap-2 bg-white rounded-2xl border border-[#E8E4DC] p-2">
+      <button data-itab="dna" onclick="setInsightTab('dna')" class="itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">🧬 Scent DNA</button>
+      <button data-itab="foryou" onclick="setInsightTab('foryou')" class="itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">✨ For You</button>
+      <button data-itab="compare" onclick="setInsightTab('compare')" class="itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">⚖️ Compare 2</button>
+      <button data-itab="wardrobe" onclick="setInsightTab('wardrobe')" class="itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">🗓️ Wardrobe &amp; Picker</button>
+      <button data-itab="sotd" onclick="setInsightTab('sotd')" class="itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition">🧴 SOTD Log</button>
+    </div>
+
+    <!-- SUB-TAB 1: SCENT DNA -->
+    <div id="itab-dna" class="space-y-5"></div>
+
+    <!-- SUB-TAB 2: RECOMMENDED FOR YOU -->
+    <div id="itab-foryou" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Recommended For You</h3>
+          <p class="text-xs text-[#6E6A61]">Based on your Scent DNA, strictly excluding fragrances in your <strong>I have</strong> collection.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="flex items-center gap-1.5 text-xs font-medium text-[#3F3C36] cursor-pointer">
+            <input id="rec-excl-tried" type="checkbox" onchange="loadRecommendations()" class="accent-[#0F5C5C]" />
+            Also hide I had / I've tried
+          </label>
+          <button onclick="loadRecommendations(true)" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">Refresh Picks</button>
+        </div>
+      </div>
+      <div id="rec-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+    </div>
+
+    <!-- SUB-TAB 3: COMPARE TWO FRAGRANCES (5-FACTOR WEIGHTED ENGINE) -->
+    <div id="itab-compare" class="hidden space-y-5">
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <div>
+          <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Compare Fragrance Similarity</h3>
+          <p class="text-xs text-[#6E6A61]">Weighted 5-factor match: <strong>Accords (38%)</strong> · <strong>Notes (34%)</strong> · <strong>Season (11%)</strong> · <strong>Day/Night (9%)</strong> · <strong>Gender (8%)</strong>.</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="relative">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Fragrance A</label>
+            <input id="cmp-input-a" type="text" oninput="onCompareSearch('a')" placeholder="Search e.g. Afnan 9pm…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+            <div id="cmp-drop-a" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto custom-scroll"></div>
+            <div id="cmp-picked-a" class="mt-2"></div>
+          </div>
+          <div class="relative">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Fragrance B</label>
+            <input id="cmp-input-b" type="text" oninput="onCompareSearch('b')" placeholder="Search e.g. Ultra Male…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+            <div id="cmp-drop-b" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto custom-scroll"></div>
+            <div id="cmp-picked-b" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+      <div id="cmp-result"></div>
+    </div>
+
+    <!-- SUB-TAB 4: WARDROBE COVERAGE MATRIX & WHAT SHOULD I WEAR TODAY PICKER -->
+    <div id="itab-wardrobe" class="hidden space-y-5">
+      <!-- What Should I Wear Today Picker -->
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">What Should I Wear Today?</h3>
+            <p class="text-xs text-[#6E6A61]">Pick your season and occasion — we'll rank the best matches from your shelf.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="pick-season" onchange="renderWearPicker()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-semibold">
+              <option value="winter">❄️ Winter</option>
+              <option value="spring">🌸 Spring</option>
+              <option value="summer">☀️ Summer</option>
+              <option value="autumn" selected>🍂 Autumn</option>
+            </select>
+            <select id="pick-occ" onchange="renderWearPicker()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-semibold">
+              <option value="day">☀️ Daytime</option>
+              <option value="night">🌙 Night / Evening</option>
+            </select>
+            <select id="pick-scope" onchange="renderWearPicker()" class="px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-semibold">
+              <option value="have">Only: I have</option>
+              <option value="all_saved">All Collections</option>
+              <option value="ranked">All Ranked</option>
+            </select>
+            <button onclick="surpriseWearPicker()" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">🎲 Pick One For Me</button>
+          </div>
+        </div>
+        <div id="wear-picker-results" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+      </div>
+
+      <!-- Wardrobe Coverage Matrix -->
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Wardrobe Coverage Matrix</h3>
+            <p class="text-xs text-[#6E6A61]">Check any combination of collections or switch to All Rankings to spot strengths &amp; gaps.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-[#FAF9F6] cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="wm-chk accent-[#0F5C5C]" value="have" checked onchange="onMatrixScopeChange('col')" /> I have</label>
+            <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-[#FAF9F6] cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="wm-chk accent-[#0F5C5C]" value="had" onchange="onMatrixScopeChange('col')" /> I had</label>
+            <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-[#FAF9F6] cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="wm-chk accent-[#0F5C5C]" value="want" onchange="onMatrixScopeChange('col')" /> I want</label>
+            <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-[#FAF9F6] cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="wm-chk accent-[#0F5C5C]" value="tried" onchange="onMatrixScopeChange('col')" /> I've tried</label>
+            <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#B9DDD9] bg-[#E6F2F1] text-[#0F5C5C] cursor-pointer flex items-center gap-1.5"><input id="wm-all-ranked" type="checkbox" class="accent-[#0F5C5C]" onchange="onMatrixScopeChange('ranked')" /> All Rankings</label>
+          </div>
+        </div>
+        <div id="wardrobe-matrix-grid"></div>
+        <div id="wardrobe-cell-detail" class="hidden pt-3 border-t border-[#F0EDE6] space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- SUB-TAB 5: SCENT OF THE DAY (SOTD) WEAR LOG & TRENDS -->
+    <div id="itab-sotd" class="hidden space-y-5">
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Log Scent of the Day (SOTD)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+          <div class="sm:col-span-6 relative">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Fragrance</label>
+            <select id="sotd-select" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm font-medium focus:outline-none focus:border-[#0F5C5C]"></select>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Date</label>
+            <input id="sotd-date" type="date" class="w-full px-3 py-2 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C]" />
+          </div>
+          <div class="sm:col-span-3">
+            <button onclick="logSOTDFromForm()" class="w-full py-2.5 rounded-full text-sm font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747] shadow-xs">Log SOTD</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOTD Trend Tabs: Past 30 Days / Past 365 Days / Monthly Champions -->
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Wear Trends &amp; History</h3>
+          <div class="flex items-center gap-1 bg-[#EFECE6] p-1 rounded-full">
+            <button data-st="30d" onclick="setSotdPeriod('30d')" class="st-btn px-3 py-1 rounded-full text-xs font-bold transition">Past 30 Days</button>
+            <button data-st="365d" onclick="setSotdPeriod('365d')" class="st-btn px-3 py-1 rounded-full text-xs font-bold transition">Past 365 Days</button>
+            <button data-st="monthly" onclick="setSotdPeriod('monthly')" class="st-btn px-3 py-1 rounded-full text-xs font-bold transition">Monthly Top</button>
+          </div>
+        </div>
+        <div id="sotd-trends-body"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-3">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Recent Wear Log</h3>
+        <div id="sotd-history-list" class="space-y-2"></div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <!-- ==================== MODAL 1: BELI BINARY RANKING ==================== -->
@@ -515,6 +742,55 @@
   </div>
 </div>
 
+
+<!-- ==================== MODAL 4: RANDOMIZER SPOTLIGHT ==================== -->
+<div id="random-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-[#FAF9F6] w-full max-w-md rounded-3xl border border-[#E4E0D7] shadow-2xl p-6 text-center space-y-4 animate-in">
+    <div class="text-xs font-bold uppercase tracking-widest text-[#9A6B19]" id="rnd-kicker">Random Pick</div>
+    <div id="rnd-body"></div>
+    <div class="flex flex-wrap items-center justify-center gap-2 pt-2">
+      <button id="rnd-wear-btn" class="px-4 py-2 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">🧴 Wore Today</button>
+      <button id="rnd-spin-btn" class="px-4 py-2 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8]">🎲 Spin Again</button>
+      <button id="rnd-detail-btn" class="px-4 py-2 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#3F3C36]">Details</button>
+      <button onclick="document.getElementById('random-modal').classList.add('hidden')" class="px-3 py-2 rounded-full text-xs font-semibold text-[#6E6A61]">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL 5: FIND SIMILAR (ALL 140K DATASET) ==================== -->
+<div id="similar-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+  <div class="bg-[#FAF9F6] w-full max-w-2xl max-h-[88vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
+    <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
+      <div>
+        <div class="text-[11px] font-bold uppercase tracking-widest text-[#0F5C5C]">Find Similar Across Entire Dataset</div>
+        <h2 class="font-serif-display text-lg font-bold text-[#1C1B18]" id="sim-title">Similar Fragrances</h2>
+      </div>
+      <button onclick="document.getElementById('similar-modal').classList.add('hidden')" class="w-8 h-8 rounded-full hover:bg-[#EFECE6] flex items-center justify-center text-[#6E6A61]">✕</button>
+    </div>
+    <div id="sim-body" class="overflow-y-auto custom-scroll p-5 space-y-2.5"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL 6: SHAREABLE TOP 5 CARD ==================== -->
+<div id="top5-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+  <div class="bg-[#FAF9F6] w-full max-w-lg max-h-[92vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
+    <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
+      <div>
+        <div class="text-[11px] font-bold uppercase tracking-widest text-[#0F5C5C]">Shareable Card</div>
+        <h2 class="font-serif-display text-lg font-bold text-[#1C1B18]">Your Top 5 Fragrances</h2>
+      </div>
+      <button onclick="document.getElementById('top5-modal').classList.add('hidden')" class="w-8 h-8 rounded-full hover:bg-[#EFECE6] flex items-center justify-center text-[#6E6A61]">✕</button>
+    </div>
+    <div class="overflow-y-auto custom-scroll p-5 space-y-4 text-center">
+      <canvas id="top5-canvas" width="1080" height="1350" class="w-full max-w-[360px] mx-auto rounded-2xl shadow-lg border border-[#E4E0D7]"></canvas>
+      <div class="flex items-center justify-center gap-2.5">
+        <button onclick="downloadTop5Card()" class="px-6 py-2.5 rounded-full text-sm font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747] shadow-sm">Download PNG</button>
+        <button onclick="document.getElementById('top5-modal').classList.add('hidden')" class="px-4 py-2.5 rounded-full text-sm font-semibold text-[#6E6A61]">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
   <div id="toast-inner" class="px-4 py-2.5 rounded-full bg-[#1C1B18] text-white text-xs sm:text-sm font-semibold shadow-lg"></div>
@@ -559,7 +835,8 @@ let userState = {
   // items[id] = { collection: 'have'|'had'|'want'|'tried', addedAt: ts, note: '', tier: 'love'|'like'|'dislike'|null }
   items: {},
   // Ordered ranked arrays per tier: each entry { id: string, tiedWithPrev: boolean }
-  tiers: { love: [], like: [], dislike: [] }
+  tiers: { love: [], like: [], dislike: [] },
+  wearLogs: []
 };
 
 // Computed score cache: id -> { score: number, rank: number, tier: string, tierRank: number }
@@ -700,11 +977,16 @@ async function onSignedIn(user) {
 
   // Load user's cloud library from Supabase
   try {
-    const { data, error } = await sbClient
+    let { data, error } = await sbClient
       .from('user_library')
-      .select('items, tiers')
+      .select('items, tiers, wear_logs')
       .eq('user_id', user.id)
       .maybeSingle();
+    if (error) {
+      // Fallback if v2 migration hasn't been run yet
+      const fb = await sbClient.from('user_library').select('items, tiers').eq('user_id', user.id).maybeSingle();
+      data = fb.data; error = fb.error;
+    }
 
     if (!error && data) {
       userState = {
@@ -713,7 +995,8 @@ async function onSignedIn(user) {
           love: Array.isArray(data.tiers?.love) ? data.tiers.love : [],
           like: Array.isArray(data.tiers?.like) ? data.tiers.like : [],
           dislike: Array.isArray(data.tiers?.dislike) ? data.tiers.dislike : []
-        }
+        },
+        wearLogs: Array.isArray(data.wear_logs) ? data.wear_logs : (userState.wearLogs || [])
       };
       recomputeScores();
       // Fetch any perfume rows referenced in user's library that aren't in local map
@@ -754,12 +1037,21 @@ function scheduleCloudSave() {
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(async () => {
     try {
-      await sbClient.from('user_library').upsert({
+      const { error: upErr } = await sbClient.from('user_library').upsert({
         user_id: currentUser.id,
         items: userState.items,
         tiers: userState.tiers,
+        wear_logs: ensureWearLogs(),
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id' });
+      if (upErr) {
+        await sbClient.from('user_library').upsert({
+          user_id: currentUser.id,
+          items: userState.items,
+          tiers: userState.tiers,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      }
       document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#136F63]';
     } catch (e) {
       console.warn('Cloud save failed:', e);
@@ -839,7 +1131,8 @@ function loadUserState() {
             love: Array.isArray(parsed.tiers.love) ? parsed.tiers.love : [],
             like: Array.isArray(parsed.tiers.like) ? parsed.tiers.like : [],
             dislike: Array.isArray(parsed.tiers.dislike) ? parsed.tiers.dislike : []
-          }
+          },
+          wearLogs: Array.isArray(parsed.wearLogs) ? parsed.wearLogs : []
         };
       }
     }
@@ -1217,7 +1510,7 @@ function updatePersonalNote(id, noteText) {
 // ==================== NAVIGATION & VIEWS ====================
 function setView(view) {
   currentView = view;
-  ['rankings', 'collections', 'discover'].forEach(v => {
+  ['rankings', 'collections', 'discover', 'insights'].forEach(v => {
     document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
     const dBtn = document.getElementById(`nav-${v}`);
     const mBtn = document.getElementById(`mnav-${v}`);
@@ -1242,6 +1535,7 @@ function refreshCurrentView() {
   if (currentView === 'rankings') renderRankings();
   else if (currentView === 'collections') renderCollections();
   else if (currentView === 'discover') renderDiscover();
+  else if (currentView === 'insights') setInsightTab(activeInsightTab);
 }
 
 function updateGlobalStats() {
@@ -1300,12 +1594,19 @@ function renderRankings() {
     if (!it || !row) return false;
     if (rankColFilter !== 'all' && it.collection !== rankColFilter) return false;
     if (tierF !== 'all' && tier !== tierF) return false;
+    if (!matchesAdvancedFilters(row, 'rf')) return false;
     if (q) {
-      const hay = `${fVal(row, 'name')} ${fVal(row, 'brand')} ${fVal(row, 'accords')} ${it.note || ''}`.toLowerCase();
+      const hay = `${fVal(row, 'name')} ${fVal(row, 'brand')} ${fVal(row, 'accords')} ${fVal(row, 'notes_top')} ${fVal(row, 'notes_middle')} ${fVal(row, 'notes_base')} ${fVal(row, 'perfumers')} ${it.note || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
   });
+  const rSort = document.getElementById('rank-sort')?.value || 'rank';
+  if (rSort === 'community') filtered.sort((a,b) => fNum(catalogById.get(b.id),'rating_avg') - fNum(catalogById.get(a.id),'rating_avg'));
+  else if (rSort === 'longevity') filtered.sort((a,b) => fNum(catalogById.get(b.id),'longevity_avg') - fNum(catalogById.get(a.id),'longevity_avg'));
+  else if (rSort === 'sillage') filtered.sort((a,b) => fNum(catalogById.get(b.id),'sillage_avg') - fNum(catalogById.get(a.id),'sillage_avg'));
+  else if (rSort === 'year') filtered.sort((a,b) => fNum(catalogById.get(b.id),'year') - fNum(catalogById.get(a.id),'year'));
+  lastFilteredRankIds = filtered.map(x => x.id);
 
   if (orderedIds.length === 0) {
     // Quick-start iconic fragrances from user's CSV
@@ -1432,8 +1733,17 @@ function renderCollections() {
     <span><strong class="text-[#1C1B18]">${COL_MAP[activeColTab].label}</strong> · ${totalInCol} total (${ratedInCol} rated, ${totalInCol - ratedInCol} unrated) · Avg score: <strong class="text-[#0F5C5C]">${avgInCol}</strong></span>
     <button onclick="setView('discover')" class="font-semibold text-[#0F5C5C] hover:underline">+ Add Fragrances</button>`;
 
-  if (ratedFilter === 'rated') list = list.filter(x => x.sc);
-  else if (ratedFilter === 'unrated') list = list.filter(x => !x.sc);
+  const cq = (document.getElementById('col-search')?.value || '').trim().toLowerCase();
+  list = list.filter(x => {
+    if (ratedFilter === 'rated' && !x.sc) return false;
+    if (ratedFilter === 'unrated' && x.sc) return false;
+    if (!matchesAdvancedFilters(x.row, 'cf')) return false;
+    if (cq) {
+      const hay = `${fVal(x.row,'name')} ${fVal(x.row,'brand')} ${fVal(x.row,'accords')} ${fVal(x.row,'notes_top')} ${fVal(x.row,'notes_middle')} ${fVal(x.row,'notes_base')} ${x.it.note || ''}`.toLowerCase();
+      if (!hay.includes(cq)) return false;
+    }
+    return true;
+  });
 
   list.sort((a, b) => {
     if (sortBy === 'rank') {
@@ -1444,8 +1754,12 @@ function renderCollections() {
     }
     if (sortBy === 'recent') return (b.it.addedAt || 0) - (a.it.addedAt || 0);
     if (sortBy === 'community') return fNum(b.row, 'rating_avg') - fNum(a.row, 'rating_avg');
+    if (sortBy === 'longevity') return fNum(b.row, 'longevity_avg') - fNum(a.row, 'longevity_avg');
+    if (sortBy === 'sillage') return fNum(b.row, 'sillage_avg') - fNum(a.row, 'sillage_avg');
+    if (sortBy === 'year') return fNum(b.row, 'year') - fNum(a.row, 'year');
     return fVal(a.row, 'name').localeCompare(fVal(b.row, 'name'));
   });
+  lastFilteredColIds = list.map(x => x.id);
 
   const container = document.getElementById('collections-list');
   if (list.length === 0) {
@@ -2052,6 +2366,9 @@ function renderDetailModal(id) {
             ${sc ? 'Re-rate (Binary)' : 'Rate via Binary Selection'}
           </button>
           ${sc ? `<button onclick="removeRatingOnly('${id}')" class="px-3.5 py-2 rounded-full text-xs font-semibold border border-[#E4E0D7] text-[#C25447] hover:bg-[#FDEEEC] transition">Remove Rating</button>` : ''}
+          <button onclick="logSOTD('${id}')" class="px-3 py-2 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition">🧴 Wore Today</button>
+          <button onclick="openFindSimilarModal('${id}')" class="px-3 py-2 rounded-full text-xs font-semibold bg-[#E6F2F1] text-[#0F5C5C] border border-[#B9DDD9] hover:bg-[#D4EAE7] transition">🔍 Find Similar</button>
+          <button onclick="launchCompareWith('${id}')" class="px-3 py-2 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">⚖️ Compare</button>
           ${it ? `<button onclick="removeFromLibrary('${id}')" class="px-3 py-2 rounded-full text-xs font-semibold text-[#6E6A61] hover:text-[#C25447]">Remove</button>` : ''}
         </div>
       </div>
@@ -2388,6 +2705,1159 @@ function executeResetUser() {
   closeCatalogModal();
   showToast('All collections and rankings cleared');
 }
+
+
+// ==================== SILLAGE v2 ENGINE (FILTERS, DNA, 5-FACTOR SIMILARITY, WARDROBE, SOTD, TOP 5) ====================
+let activeInsightTab = 'dna';
+let sotdPeriod = '30d';
+let dnaNoteFilter = 'all';
+let cmpSelected = { a: null, b: null };
+let cmpSearchTimers = { a: null, b: null };
+let lastFilteredRankIds = [];
+let lastFilteredColIds = [];
+let lastRandomView = 'rankings';
+let cachedRecs = null;
+
+// Ensure wearLogs array always exists on userState
+function ensureWearLogs() {
+  if (!Array.isArray(userState.wearLogs)) userState.wearLogs = [];
+  return userState.wearLogs;
+}
+
+// Toggle collapsible filter panels
+function toggleFilterPanel(prefix) {
+  const el = document.getElementById(`${prefix}-adv-filters`);
+  if (el) el.classList.toggle('hidden');
+}
+
+function resetAdvancedFilters(prefix, rerenderFn) {
+  ['gender', 'season', 'occasion', 'rating', 'longevity', 'sillage', 'price'].forEach(k => {
+    const el = document.getElementById(`${prefix}-${k}`);
+    if (el) el.value = '';
+  });
+  rerenderFn();
+}
+
+function matchesAdvancedFilters(row, prefix) {
+  const g = document.getElementById(`${prefix}-gender`)?.value || '';
+  const s = document.getElementById(`${prefix}-season`)?.value || '';
+  const o = document.getElementById(`${prefix}-occasion`)?.value || '';
+  const mr = parseFloat(document.getElementById(`${prefix}-rating`)?.value || '0');
+  const ml = parseFloat(document.getElementById(`${prefix}-longevity`)?.value || '0');
+  const si = document.getElementById(`${prefix}-sillage`)?.value || '';
+  const mp = parseFloat(document.getElementById(`${prefix}-price`)?.value || '0');
+
+  if (g && fVal(row, 'gender').toLowerCase() !== g) return false;
+  if (s) {
+    const bs = getBestSeason(row);
+    if (!bs || bs.key !== s) return false;
+  }
+  if (o) {
+    const bo = getBestOccasion(row);
+    if (!bo || (bo.key !== o && bo.key !== 'both')) return false;
+  }
+  if (mr && fNum(row, 'rating_avg') < mr) return false;
+  if (ml && fNum(row, 'longevity_avg') < ml) return false;
+  if (si) {
+    const sv = fNum(row, 'sillage_avg');
+    if (si === 'intimate' && !(sv > 0 && sv < 1.5)) return false;
+    if (si === 'moderate' && !(sv >= 1.5 && sv < 2.5)) return false;
+    if (si === 'strong' && sv < 2.5) return false;
+    if (si === 'enormous' && sv < 3.3) return false;
+  }
+  if (mp && fNum(row, 'price_value_avg') < mp) return false;
+  return true;
+}
+
+// ==================== RANDOMIZER (RESPECTS CURRENT VIEW FILTERS) ====================
+function randomizeFromView(viewName) {
+  lastRandomView = viewName;
+  const pool = viewName === 'rankings' ? lastFilteredRankIds : lastFilteredColIds;
+  if (!pool || pool.length === 0) {
+    showToast('No fragrances match your current filters');
+    return;
+  }
+  const pickId = pool[Math.floor(Math.random() * pool.length)];
+  showRandomSpotlight(pickId, `Random from ${pool.length} matching ${viewName === 'rankings' ? 'rankings' : 'collection items'}`);
+}
+
+function showRandomSpotlight(id, subtitle) {
+  const row = catalogById.get(String(id));
+  if (!row) return;
+  const sc = scoreMap.get(String(id));
+  const accords = parsePipePairs(fVal(row, 'accords')).slice(0, 4);
+  document.getElementById('rnd-kicker').textContent = subtitle || 'Random Pick';
+  document.getElementById('rnd-body').innerHTML = `
+    <div class="flex justify-center mb-3">
+      <div class="beli-badge beli-badge-lg ${sc ? getScoreClass(sc.score) : 'score-none'}">${sc ? formatScore(sc.score) : '—'}</div>
+    </div>
+    <div class="text-xs font-semibold text-[#6E6A61]">${escapeHtml(fVal(row, 'brand'))}${fVal(row, 'year') ? ` · ${escapeHtml(fVal(row, 'year'))}` : ''}</div>
+    <h3 class="font-serif-display text-2xl font-bold text-[#1C1B18] mt-0.5">${escapeHtml(fVal(row, 'name'))}</h3>
+    <div class="flex flex-wrap justify-center gap-1.5 mt-3">
+      ${accords.map(a => `<span class="text-[11px] font-medium px-2.5 py-0.5 rounded-full text-white" style="background:${accordColor(a.name)}">${escapeHtml(a.name)}</span>`).join('')}
+    </div>`;
+  document.getElementById('rnd-wear-btn').onclick = () => {
+    logSOTD(id);
+    document.getElementById('random-modal').classList.add('hidden');
+  };
+  document.getElementById('rnd-spin-btn').onclick = () => randomizeFromView(lastRandomView);
+  document.getElementById('rnd-detail-btn').onclick = () => {
+    document.getElementById('random-modal').classList.add('hidden');
+    openDetailModal(id);
+  };
+  document.getElementById('random-modal').classList.remove('hidden');
+}
+
+// ==================== 5-FACTOR WEIGHTED SIMILARITY ENGINE ====================
+const NOTE_SYN_GROUPS = [
+  ['vanilla', 'tonka', 'coumarin', 'benzoin'],
+  ['apple', 'pear', 'peach', 'plum', 'fruity'],
+  ['lemon', 'bergamot', 'lime', 'grapefruit', 'mandarin', 'orange', 'citron', 'yuzu'],
+  ['cedar', 'sandalwood', 'woody', 'woodsy', 'guaiac', 'cashmeran', 'iso e super'],
+  ['amber', 'ambergris', 'ambroxan', 'amberwood', 'labdanum'],
+  ['cinnamon', 'cardamom', 'nutmeg', 'cloves', 'pepper', 'ginger', 'spices'],
+  ['lavender', 'sage', 'clary sage', 'mint', 'rosemary', 'basil'],
+  ['jasmine', 'orange blossom', 'neroli', 'tuberose', 'gardenia', 'lily-of-the-valley']
+];
+
+function getNoteGroupIdx(name) {
+  for (let i = 0; i < NOTE_SYN_GROUPS.length; i++) {
+    if (NOTE_SYN_GROUPS[i].some(w => name.includes(w))) return i;
+  }
+  return -1;
+}
+
+function rowToNoteMap(row, floor = 8) {
+  const out = {};
+  ['notes_top', 'notes_middle', 'notes_base', 'notes_flat'].forEach(col => {
+    parsePipePairs(fVal(row, col)).forEach(p => {
+      const k = p.name.toLowerCase();
+      if (!k) return;
+      out[k] = Math.max(out[k] || 0, Math.max(p.val || 0, floor));
+    });
+  });
+  return out;
+}
+
+function rowToAccordMap(row, floor = 10) {
+  const out = {};
+  parsePipePairs(fVal(row, 'accords')).forEach(p => {
+    const k = p.name.toLowerCase();
+    if (!k) return;
+    out[k] = Math.max(out[k] || 0, Math.max(p.val || 0, floor));
+  });
+  return out;
+}
+
+function cosineMaps(m1, m2) {
+  const keys = new Set([...Object.keys(m1), ...Object.keys(m2)]);
+  let dot = 0, s1 = 0, s2 = 0;
+  keys.forEach(k => {
+    const a = m1[k] || 0, b = m2[k] || 0;
+    dot += a * b; s1 += a * a; s2 += b * b;
+  });
+  return (s1 && s2) ? (dot / (Math.sqrt(s1) * Math.sqrt(s2))) : 0;
+}
+
+function computeNoteSim(n1, n2) {
+  const k1 = Object.keys(n1), k2 = Object.keys(n2);
+  if (!k1.length || !k2.length) return 0;
+  const directed = (a, b) => {
+    let matched = 0, tot = 0;
+    const bKeys = Object.keys(b);
+    const bGroups = new Set(bKeys.map(getNoteGroupIdx).filter(g => g >= 0));
+    for (const [k, w] of Object.entries(a)) {
+      tot += w;
+      if (b[k] !== undefined) {
+        matched += w;
+      } else {
+        const toks = k.replace(/-/g, ' ').split(/\s+/).filter(t => t.length >= 4);
+        if (toks.length && bKeys.some(bk => toks.some(t => bk.includes(t)))) {
+          matched += w * 0.85;
+        } else {
+          const g = getNoteGroupIdx(k);
+          if (g >= 0 && bGroups.has(g)) matched += w * 0.55;
+        }
+      }
+    }
+    return tot ? matched / tot : 0;
+  };
+  return 0.5 * (directed(n1, n2) + directed(n2, n1));
+}
+
+function computeFiveFactorSimilarity(r1, r2) {
+  const n1 = rowToNoteMap(r1), n2 = rowToNoteMap(r2);
+  const a1 = rowToAccordMap(r1), a2 = rowToAccordMap(r2);
+
+  const notesScore = computeNoteSim(n1, n2);
+  const accordsScore = cosineMaps(a1, a2);
+
+  const s1 = { w: fNum(r1, 'winter'), sp: fNum(r1, 'spring'), su: fNum(r1, 'summer'), au: fNum(r1, 'autumn') };
+  const s2 = { w: fNum(r2, 'winter'), sp: fNum(r2, 'spring'), su: fNum(r2, 'summer'), au: fNum(r2, 'autumn') };
+  const seasonScore = cosineMaps(s1, s2);
+
+  const d1 = fNum(r1, 'day'), ni1 = fNum(r1, 'night');
+  const d2 = fNum(r2, 'day'), ni2 = fNum(r2, 'night');
+  const rDay1 = (d1 + ni1) ? d1 / (d1 + ni1) : 0.5;
+  const rDay2 = (d2 + ni2) ? d2 / (d2 + ni2) : 0.5;
+  const dayNightScore = 1 - Math.abs(rDay1 - rDay2);
+
+  const g1 = { f: fNum(r1,'perceived_female'), fl: fNum(r1,'perceived_female_leaning'), u: fNum(r1,'perceived_unisex'), ml: fNum(r1,'perceived_male_leaning'), m: fNum(r1,'perceived_male') };
+  const g2 = { f: fNum(r2,'perceived_female'), fl: fNum(r2,'perceived_female_leaning'), u: fNum(r2,'perceived_unisex'), ml: fNum(r2,'perceived_male_leaning'), m: fNum(r2,'perceived_male') };
+  const gSum1 = Object.values(g1).reduce((a,b)=>a+b,0);
+  const gSum2 = Object.values(g2).reduce((a,b)=>a+b,0);
+  const genderScore = (gSum1 && gSum2) ? cosineMaps(g1, g2) : (fVal(r1,'gender') === fVal(r2,'gender') ? 1 : 0.35);
+
+  // Calibrated weights: Accords 38%, Notes 34%, Season 11%, Day/Night 9%, Gender 8%
+  const total = 0.38 * accordsScore + 0.34 * notesScore + 0.11 * seasonScore + 0.09 * dayNightScore + 0.08 * genderScore;
+
+  const sharedAccords = Object.keys(a1).filter(k => a2[k] !== undefined);
+  const sharedNotes = Object.keys(n1).filter(k => n2[k] !== undefined);
+  return {
+    total: Math.round(total * 100),
+    accords: Math.round(accordsScore * 100),
+    notes: Math.round(notesScore * 100),
+    season: Math.round(seasonScore * 100),
+    dayNight: Math.round(dayNightScore * 100),
+    gender: Math.round(genderScore * 100),
+    sharedAccords,
+    sharedNotes,
+    onlyA_notes: Object.keys(n1).filter(k => n2[k] === undefined),
+    onlyB_notes: Object.keys(n2).filter(k => n1[k] === undefined)
+  };
+}
+
+// ==================== INSIGHTS NAVIGATION ====================
+function setInsightTab(tab) {
+  activeInsightTab = tab;
+  document.querySelectorAll('.itab-btn').forEach(btn => {
+    const active = btn.dataset.itab === tab;
+    btn.className = active
+      ? 'itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-[#0F5C5C] text-white shadow-xs'
+      : 'itab-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-[#5C5850] hover:bg-[#F4F1EB]';
+  });
+  ['dna', 'foryou', 'compare', 'wardrobe', 'sotd'].forEach(t => {
+    document.getElementById(`itab-${t}`).classList.toggle('hidden', t !== tab);
+  });
+
+  if (tab === 'dna') renderScentDNA();
+  else if (tab === 'foryou') loadRecommendations(false);
+  else if (tab === 'compare') renderCompareView();
+  else if (tab === 'wardrobe') { renderWearPicker(); renderWardrobeMatrix(); }
+  else if (tab === 'sotd') renderSOTDView();
+}
+
+// ==================== 1. SCENT DNA (TOP NOTES VS AVOID NOTES) ====================
+function computeScentDNA() {
+  const noteStats = {};   // key -> { name, posScore, negScore, sumScore, count, layers: Set }
+  const accordStats = {}; // key -> { name, sumScore, weight, count }
+  const brandStats = {};
+  const perfStats = {};
+  let longSum = 0, longCnt = 0, sillSum = 0, sillCnt = 0;
+  let seasonTotals = { winter: 0, spring: 0, summer: 0, autumn: 0 };
+  let dayTot = 0, nightTot = 0;
+
+  const rankedEntries = [...scoreMap.entries()];
+  rankedEntries.forEach(([id, sc]) => {
+    const row = catalogById.get(id);
+    if (!row) return;
+    const w = sc.score - 6.0; // positive for >6.0, negative for <6.0
+
+    const layerMap = [
+      ['top', 'notes_top'],
+      ['middle', 'notes_middle'],
+      ['base', 'notes_base'],
+      ['flat', 'notes_flat']
+    ];
+    const seenInFrag = new Set();
+    layerMap.forEach(([layer, col]) => {
+      parsePipePairs(fVal(row, col)).forEach(p => {
+        const k = p.name.toLowerCase();
+        if (!k) return;
+        if (!noteStats[k]) noteStats[k] = { name: p.name, net: 0, sumScore: 0, count: 0, layers: new Set() };
+        noteStats[k].layers.add(layer);
+        if (!seenInFrag.has(k)) {
+          seenInFrag.add(k);
+          noteStats[k].net += w;
+          noteStats[k].sumScore += sc.score;
+          noteStats[k].count += 1;
+        }
+      });
+    });
+
+    parsePipePairs(fVal(row, 'accords')).slice(0, 6).forEach(p => {
+      const k = p.name.toLowerCase();
+      if (!accordStats[k]) accordStats[k] = { name: p.name, net: 0, sumScore: 0, count: 0 };
+      accordStats[k].net += w * (Math.max(20, p.val) / 100);
+      accordStats[k].sumScore += sc.score;
+      accordStats[k].count += 1;
+    });
+
+    const brand = fVal(row, 'brand');
+    if (brand) {
+      if (!brandStats[brand]) brandStats[brand] = { name: brand, sumScore: 0, count: 0 };
+      brandStats[brand].sumScore += sc.score;
+      brandStats[brand].count += 1;
+    }
+    fVal(row, 'perfumers').split('|').filter(Boolean).forEach(pf => {
+      if (!perfStats[pf]) perfStats[pf] = { name: pf, sumScore: 0, count: 0 };
+      perfStats[pf].sumScore += sc.score;
+      perfStats[pf].count += 1;
+    });
+
+    if (sc.score >= 7.0) {
+      const la = fNum(row, 'longevity_avg'); if (la) { longSum += la; longCnt++; }
+      const sa = fNum(row, 'sillage_avg'); if (sa) { sillSum += sa; sillCnt++; }
+      const bs = getBestSeason(row); if (bs) seasonTotals[bs.key]++;
+      dayTot += fNum(row, 'day'); nightTot += fNum(row, 'night');
+    }
+  });
+
+  const allNotes = Object.values(noteStats).map(n => ({ ...n, avg: n.sumScore / n.count }));
+  const allAccords = Object.values(accordStats).map(a => ({ ...a, avg: a.sumScore / a.count }));
+
+  const lovedNotes = allNotes.filter(n => n.avg >= 6.8).sort((a, b) => b.net - a.net || b.count - a.count);
+  const avoidNotes = allNotes.filter(n => n.avg < 6.0).sort((a, b) => a.net - b.net || a.avg - b.avg);
+  const topAccords = allAccords.filter(a => a.net > 0).sort((a, b) => b.net - a.net).slice(0, 8);
+  const topBrands = Object.values(brandStats).map(b => ({ ...b, avg: b.sumScore / b.count })).sort((a, b) => b.count - a.count || b.avg - a.avg).slice(0, 6);
+  const topPerfumers = Object.values(perfStats).map(p => ({ ...p, avg: p.sumScore / p.count })).sort((a, b) => b.count - a.count || b.avg - a.avg).slice(0, 6);
+
+  return {
+    rankedCount: rankedEntries.length,
+    lovedNotes,
+    avoidNotes,
+    topAccords,
+    topBrands,
+    topPerfumers,
+    avgLong: longCnt ? longSum / longCnt : 0,
+    avgSill: sillCnt ? sillSum / sillCnt : 0,
+    seasonTotals,
+    dayShare: (dayTot + nightTot) ? Math.round((dayTot / (dayTot + nightTot)) * 100) : 50
+  };
+}
+
+function setDnaNoteLayer(layer) {
+  dnaNoteFilter = layer;
+  renderScentDNA();
+}
+
+function renderScentDNA() {
+  const el = document.getElementById('itab-dna');
+  const dna = computeScentDNA();
+  if (dna.rankedCount === 0) {
+    el.innerHTML = `
+      <div class="bg-white rounded-3xl border border-[#E8E4DC] p-10 text-center space-y-3">
+        <div class="text-3xl">🧬</div>
+        <h3 class="font-serif-display text-xl font-bold text-[#1C1B18]">Rank a few fragrances to unlock your Scent DNA</h3>
+        <p class="text-sm text-[#6E6A61] max-w-md mx-auto">Once you rate fragrances using binary comparisons, we'll map your favorite notes, notes you tend to avoid, signature accords, and preferred performance.</p>
+        <button onclick="setView('discover')" class="px-5 py-2.5 rounded-full text-sm font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">Discover &amp; Rate</button>
+      </div>`;
+    return;
+  }
+
+  const filterLayer = (list) => dnaNoteFilter === 'all' ? list : list.filter(n => n.layers.has(dnaNoteFilter));
+  const loved = filterLayer(dna.lovedNotes).slice(0, 14);
+  const avoid = filterLayer(dna.avoidNotes).slice(0, 12);
+  const maxAcc = Math.max(1, ...dna.topAccords.map(a => a.net));
+
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <div class="text-[11px] font-bold uppercase tracking-widest text-[#0F5C5C]">Analyzed ${dna.rankedCount} Ranked Fragrances</div>
+        <h3 class="font-serif-display text-2xl font-bold text-[#1C1B18]">Your Scent DNA</h3>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="openTop5CardModal()" class="px-4 py-2 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">📸 Shareable Top 5 Card</button>
+        <button onclick="setInsightTab('foryou')" class="px-4 py-2 rounded-full text-xs font-semibold bg-[#E6F2F1] text-[#0F5C5C] hover:bg-[#D4EAE7]">✨ See Picks For You</button>
+      </div>
+    </div>
+
+    <!-- Notes You Love vs Notes You Avoid -->
+    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h4 class="font-serif-display text-lg font-bold text-[#1C1B18]">Notes You Love vs. Notes to Avoid</h4>
+        <div class="flex items-center gap-1 bg-[#EFECE6] p-1 rounded-full">
+          ${[['all','All Notes'],['top','Top'],['middle','Heart'],['base','Base']].map(([k,lbl]) =>
+            `<button onclick="setDnaNoteLayer('${k}')" class="px-2.5 py-1 rounded-full text-[11px] font-bold transition ${dnaNoteFilter===k ? 'bg-white text-[#0F5C5C] shadow-xs' : 'text-[#6E6A61]'}">${lbl}</button>`
+          ).join('')}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded-2xl border border-[#B9DDD9] bg-[#F5FBF9] p-4 space-y-2.5">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#0F5C5C]">💚 Notes You Love Most</div>
+          ${loved.length ? `<div class="flex flex-wrap gap-1.5">${loved.map(n => `
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-white border border-[#B9DDD9] text-[#1C1B18]">
+              ${escapeHtml(n.name)} <span class="text-[10px] font-bold text-[#0F5C5C]">${n.avg.toFixed(1)} · ${n.count}×</span>
+            </span>`).join('')}</div>` : `<p class="text-xs text-[#6E6A61]">Rate more fragrances above 7.0 to populate this list.</p>`}
+        </div>
+
+        <div class="rounded-2xl border border-[#F3C5BF] bg-[#FEF6F5] p-4 space-y-2.5">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#A63F33]">🚫 Notes You Tend to Avoid</div>
+          ${avoid.length ? `<div class="flex flex-wrap gap-1.5">${avoid.map(n => `
+            <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-white border border-[#F3C5BF] text-[#1C1B18]">
+              ${escapeHtml(n.name)} <span class="text-[10px] font-bold text-[#C25447]">${n.avg.toFixed(1)} · ${n.count}×</span>
+            </span>`).join('')}</div>` : `<p class="text-xs text-[#6E6A61]">No low-rated note patterns yet (rate a few scents below 6.0 to see notes you dislike).</p>`}
+        </div>
+      </div>
+    </div>
+
+    <!-- Signature Accords & Sweet Spot -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Signature Accords</h4>
+        <div class="space-y-2">
+          ${dna.topAccords.map(a => `
+            <div class="flex items-center gap-2">
+              <div class="flex-1 bg-[#F4F1EB] rounded-full h-6 overflow-hidden">
+                <div class="h-full rounded-full px-3 flex items-center text-xs font-semibold text-white whitespace-nowrap" style="width:${Math.max(22, Math.round((a.net/maxAcc)*100))}%; background:${accordColor(a.name)}">${escapeHtml(a.name)}</div>
+              </div>
+              <span class="text-xs font-bold text-[#5C5850] w-16 text-right">Avg ${a.avg.toFixed(1)}</span>
+            </div>`).join('') || '<p class="text-xs text-[#8A857B]">Rate more fragrances to reveal your accords.</p>'}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Your Sweet Spot &amp; Favorites</h4>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-[#FAF9F6] rounded-xl p-3 border border-[#EFECE6]">
+            <div class="text-[10px] font-semibold text-[#6E6A61]">Longevity</div>
+            <div class="text-sm font-bold text-[#1C1B18] mt-0.5">${dna.avgLong ? longevityLabel(dna.avgLong) : '—'}</div>
+          </div>
+          <div class="bg-[#FAF9F6] rounded-xl p-3 border border-[#EFECE6]">
+            <div class="text-[10px] font-semibold text-[#6E6A61]">Sillage</div>
+            <div class="text-sm font-bold text-[#1C1B18] mt-0.5">${dna.avgSill ? sillageLabel(dna.avgSill) : '—'}</div>
+          </div>
+          <div class="bg-[#FAF9F6] rounded-xl p-3 border border-[#EFECE6]">
+            <div class="text-[10px] font-semibold text-[#6E6A61]">Day / Night</div>
+            <div class="text-sm font-bold text-[#1C1B18] mt-0.5">${dna.dayShare}% / ${100-dna.dayShare}%</div>
+          </div>
+        </div>
+        <div>
+          <div class="text-[11px] font-bold text-[#6E6A61] mb-1.5">Top Houses</div>
+          <div class="flex flex-wrap gap-1.5">${dna.topBrands.map(b => `<span class="text-xs px-2.5 py-1 rounded-full bg-[#FAF9F6] border border-[#E4E0D7] font-semibold">${escapeHtml(b.name)} <span class="text-[#0F5C5C]">(${b.count} · ${b.avg.toFixed(1)})</span></span>`).join('')}</div>
+        </div>
+        ${dna.topPerfumers.length ? `
+        <div>
+          <div class="text-[11px] font-bold text-[#6E6A61] mb-1.5">Favorite Perfumers</div>
+          <div class="flex flex-wrap gap-1.5">${dna.topPerfumers.map(p => `<span class="text-xs px-2.5 py-1 rounded-full bg-[#FAF9F6] border border-[#E4E0D7] font-medium">${escapeHtml(p.name)} <span class="text-[#0F5C5C]">(${p.count})</span></span>`).join('')}</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ==================== 2. RECOMMENDED FOR YOU (OUTSIDE "I HAVE") ====================
+async function fetchCandidatePool(tokens, excludeIds, limit = 180) {
+  if (sbClient && catalogSource === 'cloud') {
+    try {
+      const { data, error } = await sbClient.rpc('search_candidates_by_tokens', {
+        p_tokens: tokens.slice(0, 6),
+        p_exclude_ids: excludeIds.map(x => parseInt(x, 10)).filter(Boolean),
+        p_limit: limit
+      });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data.map(p => {
+          const arr = objToRowArray(p);
+          catalogById.set(String(p.id), arr);
+          return arr;
+        });
+      }
+    } catch (e) {
+      console.warn('Cloud RPC fallback to local catalog:', e);
+    }
+  }
+  const exSet = new Set(excludeIds.map(String));
+  return catalogRows.filter(r => !exSet.has(String(fVal(r, 'id'))));
+}
+
+async function loadRecommendations(force = false) {
+  const grid = document.getElementById('rec-grid');
+  const dna = computeScentDNA();
+  if (dna.rankedCount === 0) {
+    grid.innerHTML = `<div class="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Rank at least 1 fragrance first so we can learn your taste and generate personalized recommendations.</div>`;
+    return;
+  }
+
+  grid.innerHTML = `<div class="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Scanning fragrance database for your best matches…</div>`;
+
+  const exclTried = document.getElementById('rec-excl-tried')?.checked;
+  const excludeIds = Object.entries(userState.items)
+    .filter(([id, it]) => it.collection === 'have' || (exclTried && (it.collection === 'had' || it.collection === 'tried')))
+    .map(([id]) => id);
+
+  const topAccordKeys = dna.topAccords.slice(0, 5).map(a => a.name.toLowerCase());
+  const topNoteKeys = dna.lovedNotes.slice(0, 8).map(n => n.name.toLowerCase());
+  const avoidNoteSet = new Set(dna.avoidNotes.slice(0, 8).map(n => n.name.toLowerCase()));
+  const tokens = [...new Set([...topAccordKeys.slice(0, 3), ...topNoteKeys.slice(0, 3)])];
+
+  const pool = await fetchCandidatePool(tokens, excludeIds, 220);
+
+  // Score each candidate against user's top loved fragrances + DNA profile
+  const topLovedRows = [...scoreMap.entries()]
+    .filter(([, sc]) => sc.score >= 7.0)
+    .sort((a, b) => b[1].score - a[1].score)
+    .slice(0, 5)
+    .map(([id]) => catalogById.get(id))
+    .filter(Boolean);
+
+  const scored = [];
+  for (let i = 0; i < pool.length; i++) {
+    const r = pool[i];
+    const id = String(fVal(r, 'id'));
+    if (excludeIds.includes(id)) continue;
+    const accMap = rowToAccordMap(r);
+    const noteMap = rowToNoteMap(r);
+
+    let bestSim = 0;
+    let bestRefName = '';
+    for (const ref of topLovedRows) {
+      const s = computeFiveFactorSimilarity(ref, r).total;
+      if (s > bestSim) { bestSim = s; bestRefName = fVal(ref, 'name'); }
+    }
+
+    const matchedNotes = topNoteKeys.filter(k => noteMap[k] !== undefined);
+    const matchedAccords = topAccordKeys.filter(k => accMap[k] !== undefined);
+    const avoidHits = Object.keys(noteMap).filter(k => avoidNoteSet.has(k)).length;
+    const commBoost = Math.min(8, Math.max(0, (fNum(r, 'rating_avg') - 3.5) * 6));
+
+    const finalScore = Math.min(99, Math.max(20, Math.round(
+      (topLovedRows.length ? bestSim * 0.65 : 50) +
+      matchedAccords.length * 6 +
+      matchedNotes.length * 4 +
+      commBoost -
+      avoidHits * 9
+    )));
+
+    scored.push({ row: r, id, match: finalScore, matchedNotes: matchedNotes.slice(0, 3), matchedAccords: matchedAccords.slice(0, 3), bestRefName });
+  }
+
+  scored.sort((a, b) => b.match - a.match || fNum(b.row, 'vote_count') - fNum(a.row, 'vote_count'));
+  const top24 = scored.slice(0, 24);
+
+  if (!top24.length) {
+    grid.innerHTML = `<div class="sm:col-span-2 lg:col-span-3 bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">No recommendations found right now. Try rating a few more fragrances!</div>`;
+    return;
+  }
+
+  grid.innerHTML = top24.map(item => {
+    const r = item.row;
+    const it = userState.items[item.id];
+    const colInfo = it ? COL_MAP[it.collection] : null;
+    return `
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 flex flex-col justify-between gap-3 card-hover">
+        <div class="cursor-pointer" onclick="openDetailModal('${item.id}')">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</div>
+              <h4 class="font-bold text-sm sm:text-base text-[#1C1B18] hover:text-[#0F5C5C] truncate">${escapeHtml(fVal(r, 'name'))}</h4>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-extrabold bg-[#E6F2F1] text-[#0F5C5C] shrink-0">${item.match}% match</span>
+          </div>
+          ${item.bestRefName ? `<div class="text-[11px] text-[#6E6A61] mt-1.5">Similar vibe to <strong class="text-[#1C1B18]">${escapeHtml(item.bestRefName)}</strong></div>` : ''}
+          <div class="flex flex-wrap gap-1 mt-2">
+            ${item.matchedAccords.map(a => `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full text-white" style="background:${accordColor(a)}">${escapeHtml(a)}</span>`).join('')}
+            ${item.matchedNotes.map(n => `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#FAF9F6] border border-[#E4E0D7] text-[#3F3C36]">${escapeHtml(n)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="flex items-center justify-between gap-2 pt-2.5 border-t border-[#F0EDE6]">
+          <button onclick="openRankModal('${item.id}')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747]">Rate</button>
+          <button onclick="addToCollectionUnrated('${item.id}', 'want')" class="px-3 py-1.5 rounded-full text-xs font-semibold border ${colInfo ? colInfo.color : 'bg-[#FDF5E6] text-[#9A6B19] border-[#EDD8B1] hover:bg-[#FAECC8]'}">${colInfo ? `✓ ${colInfo.label}` : '+ I want'}</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ==================== 3. FIND SIMILAR (ENTIRE 140K DATASET, SEPARATE FROM FOR YOU) ====================
+async function openFindSimilarModal(id) {
+  id = String(id);
+  const ref = catalogById.get(id);
+  if (!ref) return;
+  document.getElementById('sim-title').textContent = `Most Similar to ${fVal(ref, 'name')}`;
+  document.getElementById('sim-body').innerHTML = `<div class="py-10 text-center text-sm text-[#6E6A61]">Comparing against all fragrances…</div>`;
+  document.getElementById('similar-modal').classList.remove('hidden');
+
+  const topAccs = parsePipePairs(fVal(ref, 'accords')).slice(0, 3).map(a => a.name.toLowerCase());
+  const topNts = Object.entries(rowToNoteMap(ref)).sort((a,b) => b[1]-a[1]).slice(0, 3).map(x => x[0]);
+  const tokens = [...new Set([...topAccs, ...topNts])];
+
+  const pool = await fetchCandidatePool(tokens, [id], 250);
+  const scored = pool
+    .filter(r => String(fVal(r, 'id')) !== id)
+    .map(r => ({ row: r, id: String(fVal(r, 'id')), sim: computeFiveFactorSimilarity(ref, r) }))
+    .sort((a, b) => b.sim.total - a.sim.total || fNum(b.row, 'vote_count') - fNum(a.row, 'vote_count'))
+    .slice(0, 15);
+
+  document.getElementById('sim-body').innerHTML = scored.map(({ row: r, id: cid, sim }) => {
+    const it = userState.items[cid];
+    const colInfo = it ? COL_MAP[it.collection] : null;
+    return `
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 flex items-center justify-between gap-3 card-hover">
+        <div class="min-w-0 flex-1 cursor-pointer" onclick="document.getElementById('similar-modal').classList.add('hidden'); openDetailModal('${cid}')">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}</span>
+            ${colInfo ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${colInfo.color}">${colInfo.label}</span>` : ''}
+          </div>
+          <div class="font-bold text-sm text-[#1C1B18] truncate">${escapeHtml(fVal(r, 'name'))}</div>
+          <div class="text-[11px] text-[#6E6A61] mt-1">
+            Accords ${sim.accords}% · Notes ${sim.notes}% · Season ${sim.season}% · Day/Night ${sim.dayNight}% · Gender ${sim.gender}%
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="launchCompareWith('${id}', '${cid}')" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F4F1EB] text-[#3F3C36] hover:bg-[#E6F2F1] hover:text-[#0F5C5C]">Compare</button>
+          <div class="beli-badge beli-badge-sm ${sim.total >= 75 ? 'score-high' : sim.total >= 55 ? 'score-mid' : 'score-low'}">${sim.total}%</div>
+        </div>
+      </div>`;
+  }).join('') || `<div class="py-8 text-center text-sm text-[#6E6A61]">No similar fragrances found.</div>`;
+}
+
+// ==================== 4. COMPARE TWO FRAGRANCES ====================
+function launchCompareWith(idA, idB = null) {
+  document.getElementById('similar-modal').classList.add('hidden');
+  closeDetailModal();
+  cmpSelected.a = String(idA);
+  if (idB) cmpSelected.b = String(idB);
+  setView('insights');
+  setInsightTab('compare');
+}
+
+function onCompareSearch(slot) {
+  const q = document.getElementById(`cmp-input-${slot}`).value.trim().toLowerCase();
+  const drop = document.getElementById(`cmp-drop-${slot}`);
+  clearTimeout(cmpSearchTimers[slot]);
+  if (q.length < 2) { drop.classList.add('hidden'); return; }
+
+  cmpSearchTimers[slot] = setTimeout(async () => {
+    let results = [];
+    if (sbClient && catalogSource === 'cloud') {
+      const terms = q.split(/\s+/).filter(Boolean).slice(0, 3);
+      let query = sbClient.from('perfumes').select('*');
+      terms.forEach(t => { query = query.ilike('search_text', `%${t}%`); });
+      const { data } = await query.order('vote_count', { ascending: false }).limit(12);
+      if (data) {
+        results = data.map(p => {
+          const arr = objToRowArray(p);
+          catalogById.set(String(p.id), arr);
+          return arr;
+        });
+      }
+    } else {
+      const terms = q.split(/\s+/).filter(Boolean);
+      for (let i = 0; i < catalogRows.length && results.length < 12; i++) {
+        const r = catalogRows[i];
+        const hay = `${r[COL.name]} ${r[COL.brand]}`.toLowerCase();
+        if (terms.every(t => hay.includes(t))) results.push(r);
+      }
+    }
+
+    if (!results.length) {
+      drop.innerHTML = `<div class="p-3 text-xs text-[#8A857B]">No matches found</div>`;
+    } else {
+      drop.innerHTML = results.map(r => {
+        const rid = String(fVal(r, 'id'));
+        return `<button type="button" onclick="pickCompareSlot('${slot}', '${rid}')" class="w-full text-left px-3.5 py-2 hover:bg-[#E6F2F1] border-b border-[#F4F1EB] last:border-0">
+          <div class="text-xs font-bold text-[#1C1B18]">${escapeHtml(fVal(r, 'name'))}</div>
+          <div class="text-[11px] text-[#6E6A61]">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</div>
+        </button>`;
+      }).join('');
+    }
+    drop.classList.remove('hidden');
+  }, 150);
+}
+
+function pickCompareSlot(slot, id) {
+  cmpSelected[slot] = String(id);
+  document.getElementById(`cmp-drop-${slot}`).classList.add('hidden');
+  document.getElementById(`cmp-input-${slot}`).value = '';
+  renderCompareView();
+}
+
+function renderCompareView() {
+  ['a', 'b'].forEach(slot => {
+    const box = document.getElementById(`cmp-picked-${slot}`);
+    const id = cmpSelected[slot];
+    const r = id ? catalogById.get(id) : null;
+    if (!r) {
+      box.innerHTML = `<div class="text-xs text-[#8A857B] italic">No fragrance selected yet</div>`;
+    } else {
+      box.innerHTML = `
+        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF9F6] border border-[#E4E0D7]">
+          <div class="min-w-0">
+            <div class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}</div>
+            <div class="text-sm font-bold text-[#1C1B18] truncate">${escapeHtml(fVal(r, 'name'))}</div>
+          </div>
+          <button onclick="cmpSelected['${slot}']=null; renderCompareView();" class="text-xs text-[#8A857B] hover:text-[#C25447] px-2">✕</button>
+        </div>`;
+    }
+  });
+
+  const out = document.getElementById('cmp-result');
+  if (!cmpSelected.a || !cmpSelected.b) {
+    out.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Select two fragrances above to see their weighted 5-factor similarity score and breakdown.</div>`;
+    return;
+  }
+
+  const rA = catalogById.get(cmpSelected.a);
+  const rB = catalogById.get(cmpSelected.b);
+  const sim = computeFiveFactorSimilarity(rA, rB);
+  const verdict = sim.total >= 80 ? 'Very Similar / Clone Territory' : sim.total >= 65 ? 'Closely Related Vibe' : sim.total >= 45 ? 'Moderately Similar' : 'Distinct Scent Profiles';
+
+  const barRow = (label, weight, pct, color) => `
+    <div class="space-y-1">
+      <div class="flex justify-between text-xs font-semibold">
+        <span class="text-[#3F3C36]">${label} <span class="text-[#8A857B] font-normal">(${weight} weight)</span></span>
+        <span class="text-[#1C1B18] tabular-nums">${pct}%</span>
+      </div>
+      <div class="w-full h-2.5 bg-[#EFECE6] rounded-full overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%; background:${color}"></div>
+      </div>
+    </div>`;
+
+  out.innerHTML = `
+    <div class="bg-white rounded-3xl border border-[#E8E4DC] p-6 space-y-6 animate-in">
+      <div class="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-[#F0EDE6]">
+        <div class="beli-badge beli-badge-lg ${sim.total >= 75 ? 'score-high' : sim.total >= 50 ? 'score-mid' : 'score-low'}">${sim.total}%</div>
+        <div class="text-center sm:text-left">
+          <div class="text-xs font-bold uppercase tracking-widest text-[#0F5C5C]">${verdict}</div>
+          <h3 class="font-serif-display text-xl font-bold text-[#1C1B18] mt-0.5">${escapeHtml(fVal(rA, 'name'))} <span class="text-[#8A857B] font-normal">vs</span> ${escapeHtml(fVal(rB, 'name'))}</h3>
+          <p class="text-xs text-[#6E6A61] mt-1">${sim.sharedAccords.length} shared accords · ${sim.sharedNotes.length} exact shared notes</p>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        ${barRow('Accords Match', '38%', sim.accords, '#0F5C5C')}
+        ${barRow('Notes Match', '34%', sim.notes, '#C48B2C')}
+        ${barRow('Season Match', '11%', sim.season, '#3E7B5E')}
+        ${barRow('Day / Night Match', '9%', sim.dayNight, '#4C5C8A')}
+        ${barRow('Gender Profile Match', '8%', sim.gender, '#8B5A2B')}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+        <div class="rounded-2xl border border-[#B9DDD9] bg-[#F5FBF9] p-4 space-y-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#0F5C5C]">Shared DNA</div>
+          <div class="flex flex-wrap gap-1">${sim.sharedAccords.map(a => `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style="background:${accordColor(a)}">${escapeHtml(a)}</span>`).join('')}</div>
+          <div class="flex flex-wrap gap-1 pt-1">${sim.sharedNotes.map(n => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white border border-[#B9DDD9] text-[#1C1B18]">${escapeHtml(n)}</span>`).join('') || '<span class="text-xs text-[#6E6A61]">No exact shared notes</span>'}</div>
+        </div>
+        <div class="rounded-2xl border border-[#E8E4DC] bg-[#FAF9F6] p-4 space-y-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Unique to ${escapeHtml(fVal(rA, 'name'))}</div>
+          <div class="flex flex-wrap gap-1">${sim.onlyA_notes.slice(0,10).map(n => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white border border-[#E4E0D7]">${escapeHtml(n)}</span>`).join('')}</div>
+        </div>
+        <div class="rounded-2xl border border-[#E8E4DC] bg-[#FAF9F6] p-4 space-y-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Unique to ${escapeHtml(fVal(rB, 'name'))}</div>
+          <div class="flex flex-wrap gap-1">${sim.onlyB_notes.slice(0,10).map(n => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white border border-[#E4E0D7]">${escapeHtml(n)}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ==================== 5. WARDROBE MATRIX & WHAT SHOULD I WEAR TODAY PICKER ====================
+function onMatrixScopeChange(mode) {
+  const allR = document.getElementById('wm-all-ranked');
+  if (mode === 'ranked' && allR.checked) {
+    document.querySelectorAll('.wm-chk').forEach(c => { c.checked = false; });
+  } else if (mode === 'col') {
+    allR.checked = false;
+  }
+  renderWardrobeMatrix();
+}
+
+function renderWardrobeMatrix() {
+  const allRanked = document.getElementById('wm-all-ranked')?.checked;
+  const checkedCols = [...document.querySelectorAll('.wm-chk:checked')].map(c => c.value);
+
+  let ids = [];
+  if (allRanked) {
+    ids = [...scoreMap.keys()];
+  } else {
+    ids = Object.entries(userState.items)
+      .filter(([, it]) => checkedCols.includes(it.collection))
+      .map(([id]) => id);
+  }
+
+  const seasons = [
+    { key: 'winter', label: 'Winter', icon: '❄️' },
+    { key: 'spring', label: 'Spring', icon: '🌸' },
+    { key: 'summer', label: 'Summer', icon: '☀️' },
+    { key: 'autumn', label: 'Autumn', icon: '🍂' }
+  ];
+  const cells = {};
+  seasons.forEach(s => { cells[`${s.key}_day`] = []; cells[`${s.key}_night`] = []; });
+
+  ids.forEach(id => {
+    const r = catalogById.get(String(id));
+    if (!r) return;
+    const sVals = { winter: fNum(r,'winter'), spring: fNum(r,'spring'), summer: fNum(r,'summer'), autumn: fNum(r,'autumn') };
+    const maxS = Math.max(...Object.values(sVals));
+    if (maxS <= 0) return;
+    const d = fNum(r,'day'), n = fNum(r,'night');
+    const fitsDay = (d + n) === 0 || (d / (d + n)) >= 0.35;
+    const fitsNight = (d + n) === 0 || (n / (d + n)) >= 0.35;
+
+    seasons.forEach(s => {
+      if (sVals[s.key] >= maxS * 0.65) {
+        if (fitsDay) cells[`${s.key}_day`].push(id);
+        if (fitsNight) cells[`${s.key}_night`].push(id);
+      }
+    });
+  });
+
+  window._matrixCells = cells;
+  const grid = document.getElementById('wardrobe-matrix-grid');
+  grid.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-separate border-spacing-2">
+        <thead>
+          <tr>
+            <th class="text-xs font-bold uppercase tracking-wider text-[#6E6A61] p-2">Season</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[#B45309] p-2 text-center">☀️ Daytime</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[#312E81] p-2 text-center">🌙 Night / Evening</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${seasons.map(s => `
+            <tr>
+              <td class="font-bold text-sm text-[#1C1B18] p-2 whitespace-nowrap">${s.icon} ${s.label}</td>
+              ${['day', 'night'].map(occ => {
+                const key = `${s.key}_${occ}`;
+                const list = cells[key];
+                const cnt = list.length;
+                const bg = cnt === 0 ? 'bg-[#FEF6F5] border-[#F3C5BF] text-[#A63F33]' : cnt <= 2 ? 'bg-[#FDF7EB] border-[#EDD8B1] text-[#8C5E14]' : 'bg-[#ECF7F5] border-[#B9DDD9] text-[#0F5C5C]';
+                const topId = list.slice().sort((a,b) => (scoreMap.get(b)?.score ?? -1) - (scoreMap.get(a)?.score ?? -1))[0];
+                const topName = topId ? fVal(catalogById.get(topId), 'name') : 'Coverage gap';
+                return `
+                  <td>
+                    <button onclick="showMatrixCell('${key}', '${s.label} ${occ === 'day' ? 'Daytime' : 'Night'}')" class="w-full p-3 rounded-2xl border text-left transition hover:shadow-sm ${bg}">
+                      <div class="flex items-baseline justify-between">
+                        <span class="font-serif-display text-xl font-bold">${cnt}</span>
+                        <span class="text-[10px] font-bold uppercase">${cnt === 0 ? 'Gap' : cnt <= 2 ? 'Light' : 'Covered'}</span>
+                      </div>
+                      <div class="text-[11px] truncate mt-1 opacity-90">${escapeHtml(topName)}</div>
+                    </button>
+                  </td>`;
+              }).join('')}
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function showMatrixCell(key, title) {
+  const list = (window._matrixCells && window._matrixCells[key]) || [];
+  const box = document.getElementById('wardrobe-cell-detail');
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="flex items-center justify-between">
+      <div class="text-xs font-bold uppercase tracking-wider text-[#0F5C5C]">${title} (${list.length})</div>
+      <button onclick="document.getElementById('wardrobe-cell-detail').classList.add('hidden')" class="text-xs text-[#8A857B]">Hide</button>
+    </div>
+    ${list.length ? `<div class="flex flex-wrap gap-1.5">${list.map(id => {
+      const r = catalogById.get(id);
+      const sc = scoreMap.get(id);
+      return `<button onclick="openDetailModal('${id}')" class="text-xs px-3 py-1.5 rounded-full bg-[#FAF9F6] border border-[#E4E0D7] hover:border-[#0F5C5C] font-semibold">
+        ${escapeHtml(fVal(r, 'name'))} ${sc ? `<span class="text-[#0F5C5C]">(${formatScore(sc.score)})</span>` : ''}
+      </button>`;
+    }).join('')}</div>` : `<p class="text-xs text-[#6E6A61]">You have a gap here! Try searching Discover for ${title} fragrances.</p>`}`;
+}
+
+function getWearPickerCandidates() {
+  const season = document.getElementById('pick-season')?.value || 'autumn';
+  const occ = document.getElementById('pick-occ')?.value || 'day';
+  const scope = document.getElementById('pick-scope')?.value || 'have';
+
+  let ids = [];
+  if (scope === 'have') ids = Object.entries(userState.items).filter(([,it]) => it.collection === 'have').map(([id]) => id);
+  else if (scope === 'ranked') ids = [...scoreMap.keys()];
+  else ids = Object.keys(userState.items);
+
+  return ids.map(id => {
+    const r = catalogById.get(id);
+    if (!r) return null;
+    const sSum = fNum(r,'winter') + fNum(r,'spring') + fNum(r,'summer') + fNum(r,'autumn');
+    const seasonFit = sSum ? (fNum(r, season) / sSum) : 0.25;
+    const dnSum = fNum(r,'day') + fNum(r,'night');
+    const occFit = dnSum ? (fNum(r, occ) / dnSum) : 0.5;
+    const userSc = scoreMap.get(id)?.score ?? 6.5;
+    const rankScore = (seasonFit * 40) + (occFit * 30) + (userSc * 3);
+    return { id, row: r, sc: scoreMap.get(id), rankScore, seasonFit, occFit };
+  }).filter(Boolean).sort((a, b) => b.rankScore - a.rankScore);
+}
+
+function renderWearPicker() {
+  const picks = getWearPickerCandidates().slice(0, 6);
+  const el = document.getElementById('wear-picker-results');
+  if (!picks.length) {
+    el.innerHTML = `<div class="sm:col-span-3 text-xs text-[#6E6A61] py-4 text-center">Add some fragrances to your <strong>I have</strong> collection to get daily wear picks.</div>`;
+    return;
+  }
+  el.innerHTML = picks.map((p, idx) => `
+    <div class="rounded-2xl border ${idx === 0 ? 'border-[#0F5C5C] bg-[#F5FBF9]' : 'border-[#E8E4DC] bg-[#FAF9F6]'} p-3.5 flex flex-col justify-between gap-2.5">
+      <div class="flex items-start justify-between gap-2 cursor-pointer" onclick="openDetailModal('${p.id}')">
+        <div class="min-w-0">
+          <div class="text-[10px] font-bold uppercase text-[#0F5C5C]">${idx === 0 ? '★ Top Pick' : `#${idx + 1} Match`}</div>
+          <div class="font-bold text-sm text-[#1C1B18] truncate">${escapeHtml(fVal(p.row, 'name'))}</div>
+          <div class="text-[11px] text-[#6E6A61] truncate">${escapeHtml(fVal(p.row, 'brand'))}</div>
+        </div>
+        ${p.sc ? `<span class="beli-badge beli-badge-sm ${getScoreClass(p.sc.score)}">${formatScore(p.sc.score)}</span>` : ''}
+      </div>
+      <button onclick="logSOTD('${p.id}')" class="w-full py-1.5 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#0F5C5C] hover:bg-[#0F5C5C] hover:text-white transition">🧴 Wear Today</button>
+    </div>`).join('');
+}
+
+function surpriseWearPicker() {
+  const cands = getWearPickerCandidates().slice(0, 12);
+  if (!cands.length) { showToast('No fragrances in this shelf yet'); return; }
+  const pick = cands[Math.floor(Math.random() * cands.length)];
+  showRandomSpotlight(pick.id, 'Today’s Weather & Occasion Pick');
+}
+
+// ==================== 6. SCENT OF THE DAY (SOTD) LOG & HISTORICAL TRENDS ====================
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function logSOTD(id, dateStr = todayISO()) {
+  id = String(id);
+  const logs = ensureWearLogs();
+  logs.unshift({ id, date: dateStr, ts: Date.now() });
+  saveUserState();
+  const r = catalogById.get(id);
+  showToast(`Logged ${r ? fVal(r, 'name') : 'fragrance'} for ${dateStr}`);
+  if (currentView === 'insights' && activeInsightTab === 'sotd') renderSOTDView();
+}
+
+function logSOTDFromForm() {
+  const id = document.getElementById('sotd-select')?.value;
+  const dateStr = document.getElementById('sotd-date')?.value || todayISO();
+  if (!id) { showToast('Add a fragrance to your collections first'); return; }
+  logSOTD(id, dateStr);
+}
+
+function deleteSOTDEntry(ts) {
+  userState.wearLogs = ensureWearLogs().filter(x => x.ts !== ts);
+  saveUserState();
+  renderSOTDView();
+  showToast('Wear log entry removed');
+}
+
+function setSotdPeriod(p) {
+  sotdPeriod = p;
+  renderSOTDView();
+}
+
+function renderSOTDView() {
+  // Populate dropdown from user's collections (prioritizing I have)
+  const sel = document.getElementById('sotd-select');
+  const dateEl = document.getElementById('sotd-date');
+  if (dateEl && !dateEl.value) dateEl.value = todayISO();
+
+  const savedEntries = Object.entries(userState.items)
+    .filter(([id]) => catalogById.has(id))
+    .sort((a, b) => (a[1].collection === 'have' ? -1 : 1) - (b[1].collection === 'have' ? -1 : 1));
+
+  sel.innerHTML = savedEntries.length
+    ? savedEntries.map(([id, it]) => {
+        const r = catalogById.get(id);
+        return `<option value="${id}">${escapeHtml(fVal(r, 'name'))} — ${escapeHtml(fVal(r, 'brand'))} (${COL_MAP[it.collection]?.label || ''})</option>`;
+      }).join('')
+    : `<option value="">Add fragrances to your collections first</option>`;
+
+  document.querySelectorAll('.st-btn').forEach(b => {
+    const active = b.dataset.st === sotdPeriod;
+    b.className = active
+      ? 'st-btn px-3 py-1 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs'
+      : 'st-btn px-3 py-1 rounded-full text-xs font-bold transition text-[#6E6A61]';
+  });
+
+  const logs = ensureWearLogs().slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.ts - a.ts);
+  const body = document.getElementById('sotd-trends-body');
+  const now = new Date();
+
+  if (sotdPeriod === 'monthly') {
+    const byMonth = {};
+    logs.forEach(l => {
+      const m = (l.date || '').slice(0, 7);
+      if (!m) return;
+      if (!byMonth[m]) byMonth[m] = {};
+      byMonth[m][l.id] = (byMonth[m][l.id] || 0) + 1;
+    });
+    const months = Object.keys(byMonth).sort().reverse();
+    body.innerHTML = months.length ? `
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        ${months.map(m => {
+          const entries = Object.entries(byMonth[m]).sort((a,b) => b[1] - a[1]);
+          const totalWears = entries.reduce((s, x) => s + x[1], 0);
+          const [topId, topCnt] = entries[0];
+          const r = catalogById.get(topId);
+          return `
+            <div class="rounded-2xl border border-[#E8E4DC] bg-[#FAF9F6] p-4 space-y-1">
+              <div class="flex justify-between text-[11px] font-bold uppercase text-[#0F5C5C]"><span>${m}</span><span>${totalWears} wears</span></div>
+              <div class="font-bold text-sm text-[#1C1B18] truncate">${r ? escapeHtml(fVal(r, 'name')) : 'Fragrance #' + topId}</div>
+              <div class="text-xs text-[#6E6A61]">#1 Most Worn (${topCnt}×)</div>
+            </div>`;
+        }).join('')}
+      </div>` : `<p class="text-xs text-[#6E6A61] py-4 text-center">No wear logs recorded yet. Log your Scent of the Day above!</p>`;
+  } else {
+    const days = sotdPeriod === '30d' ? 30 : 365;
+    const cutoff = new Date(now.getTime() - days * 86400000).toISOString().slice(0, 10);
+    const filtered = logs.filter(l => (l.date || '') >= cutoff);
+    const counts = {};
+    filtered.forEach(l => { counts[l.id] = (counts[l.id] || 0) + 1; });
+    const ranked = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+    const maxCnt = ranked[0]?.[1] || 1;
+
+    body.innerHTML = ranked.length ? `
+      <div class="text-xs text-[#6E6A61] mb-3"><strong>${filtered.length}</strong> total wears across <strong>${ranked.length}</strong> unique fragrances in the past ${days} days.</div>
+      <div class="space-y-2">
+        ${ranked.slice(0, 10).map(([id, cnt], i) => {
+          const r = catalogById.get(id);
+          return `
+            <div class="flex items-center gap-3">
+              <span class="w-6 text-xs font-bold text-[#6E6A61]">#${i+1}</span>
+              <button onclick="openDetailModal('${id}')" class="w-40 sm:w-56 text-left text-xs font-bold text-[#1C1B18] hover:text-[#0F5C5C] truncate">${r ? escapeHtml(fVal(r,'name')) : '#' + id}</button>
+              <div class="flex-1 h-3 bg-[#EFECE6] rounded-full overflow-hidden">
+                <div class="h-full rounded-full bg-[#0F5C5C]" style="width:${Math.round((cnt/maxCnt)*100)}%"></div>
+              </div>
+              <span class="w-12 text-right text-xs font-bold text-[#1C1B18]">${cnt}×</span>
+            </div>`;
+        }).join('')}
+      </div>` : `<p class="text-xs text-[#6E6A61] py-4 text-center">No wears logged in the past ${days} days yet.</p>`;
+  }
+
+  const histEl = document.getElementById('sotd-history-list');
+  histEl.innerHTML = logs.slice(0, 25).map(l => {
+    const r = catalogById.get(l.id);
+    return `
+      <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-[#FAF9F6] border border-[#EFECE6] text-xs">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="font-mono text-[11px] font-semibold text-[#6E6A61] shrink-0">${escapeHtml(l.date)}</span>
+          <button onclick="openDetailModal('${l.id}')" class="font-bold text-[#1C1B18] hover:text-[#0F5C5C] truncate">${r ? escapeHtml(fVal(r, 'name')) : 'ID ' + l.id}</button>
+          <span class="text-[#8A857B] truncate hidden sm:inline">${r ? escapeHtml(fVal(r, 'brand')) : ''}</span>
+        </div>
+        <button onclick="deleteSOTDEntry(${l.ts})" class="text-[#8A857B] hover:text-[#C25447] px-1.5">✕</button>
+      </div>`;
+  }).join('') || `<p class="text-xs text-[#8A857B]">Your wear history will appear here.</p>`;
+}
+
+// ==================== 7. SHAREABLE TOP 5 CARD (CANVAS PNG) ====================
+function openTop5CardModal() {
+  const ordered = [
+    ...userState.tiers.love,
+    ...userState.tiers.like,
+    ...userState.tiers.dislike
+  ].map(e => String(e.id)).filter(id => catalogById.has(id)).slice(0, 5);
+
+  if (ordered.length === 0) {
+    showToast('Rank at least 1 fragrance first to generate your Top 5 Card');
+    return;
+  }
+
+  const canvas = document.getElementById('top5-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = 1080, H = 1350;
+
+  // Warm editorial background
+  ctx.fillStyle = '#FAF9F6';
+  ctx.fillRect(0, 0, W, H);
+
+  // Top accent bar
+  ctx.fillStyle = '#0F5C5C';
+  ctx.fillRect(0, 0, W, 18);
+
+  // Header
+  ctx.fillStyle = '#0F5C5C';
+  ctx.font = 'bold 28px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('SILLAGE · FRAGRANCE RANKINGS', 72, 105);
+
+  ctx.fillStyle = '#1C1B18';
+  ctx.font = 'bold 68px Georgia, serif';
+  ctx.fillText('My Top 5 Scents', 72, 185);
+
+  const userTag = currentUser ? currentUser.email.split('@')[0] : 'Personal Shelf';
+  ctx.fillStyle = '#6E6A61';
+  ctx.font = '500 28px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(`${userTag}  ·  ${scoreMap.size} ranked fragrances`, 72, 232);
+
+  // Cards
+  let y = 285;
+  ordered.forEach((id, idx) => {
+    const r = catalogById.get(id);
+    const sc = scoreMap.get(id);
+    const acc = parsePipePairs(fVal(r, 'accords')).slice(0, 3);
+
+    // Card background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = '#E8E4DC';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(72, y, W - 144, 168, 28);
+    ctx.fill();
+    ctx.stroke();
+
+    // Left accent strip
+    ctx.fillStyle = acc[0] ? accordColor(acc[0].name) : '#0F5C5C';
+    ctx.beginPath();
+    ctx.roundRect(72, y, 16, 168, [28, 0, 0, 28]);
+    ctx.fill();
+
+    // Rank number
+    ctx.fillStyle = '#1C1B18';
+    ctx.font = 'bold 44px Georgia, serif';
+    ctx.fillText(`#${idx + 1}`, 114, y + 98);
+
+    // Name & Brand
+    const name = fVal(r, 'name');
+    const brand = `${fVal(r, 'brand')}${fVal(r, 'year') ? ' · ' + fVal(r, 'year') : ''}`;
+    ctx.fillStyle = '#1C1B18';
+    ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(name.length > 26 ? name.slice(0, 25) + '…' : name, 200, y + 66);
+
+    ctx.fillStyle = '#6E6A61';
+    ctx.font = '500 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(brand.length > 36 ? brand.slice(0, 35) + '…' : brand, 200, y + 104);
+
+    // Accords text
+    ctx.fillStyle = '#0F5C5C';
+    ctx.font = '600 21px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(acc.map(a => a.name).join('  ·  '), 200, y + 142);
+
+    // Score circle
+    const cx = W - 146, cy = y + 84;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+    ctx.fillStyle = sc.score >= 7.5 ? '#ECF7F5' : sc.score >= 4.5 ? '#FDF7EB' : '#FDEEEC';
+    ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = sc.score >= 7.5 ? '#136F63' : sc.score >= 4.5 ? '#C48B2C' : '#C25447';
+    ctx.stroke();
+
+    ctx.fillStyle = sc.score >= 7.5 ? '#0F5C5C' : sc.score >= 4.5 ? '#9A6B19' : '#A63F33';
+    ctx.font = 'bold 32px "Plus Jakarta Sans", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(formatScore(sc.score), cx, cy + 11);
+    ctx.textAlign = 'left';
+
+    y += 188;
+  });
+
+  // Footer
+  const dna = computeScentDNA();
+  const sigAcc = dna.topAccords.slice(0, 4).map(a => a.name).join(' · ');
+  ctx.fillStyle = '#6E6A61';
+  ctx.font = '600 24px "Plus Jakarta Sans", sans-serif';
+  if (sigAcc) ctx.fillText(`Signature Accords: ${sigAcc}`, 72, H - 62);
+
+  document.getElementById('top5-modal').classList.remove('hidden');
+}
+
+function downloadTop5Card() {
+  const canvas = document.getElementById('top5-canvas');
+  const a = document.createElement('a');
+  a.download = `sillage-top5-${todayISO()}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+  showToast('Top 5 card downloaded');
+}
+
 
 // Start app
 boot();
