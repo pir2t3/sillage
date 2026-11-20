@@ -248,6 +248,7 @@
           <button data-col="tried" onclick="setRankFilter('tried')" class="rcol-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I've tried</button>
         </div>
         <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="launchCompareFromShelf('ranked')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition" title="Compare fragrances in your rankings">⚖️ Compare</button>
           <button onclick="randomizeFromView('rankings')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition" title="Pick a random fragrance from your current filtered rankings">🎲 Randomize</button>
           <button onclick="openTop5CardModal()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E6F2F1] text-[#0F5C5C] border border-[#B9DDD9] hover:bg-[#D4EAE7] transition" title="Generate a shareable Top 5 image card">📸 Top 5 Card</button>
           <button onclick="toggleFilterPanel('rank')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">Filters ▾</button>
@@ -314,6 +315,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="launchCompareFromShelf('col', activeColTab)" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition" title="Compare fragrances in this collection">⚖️ Compare</button>
           <button onclick="randomizeFromView('collections')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition" title="Pick a random fragrance from your current filtered collection">🎲 Randomize</button>
           <button onclick="toggleFilterPanel('col')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">Filters ▾</button>
         </div>
@@ -444,25 +446,69 @@
       <div id="rec-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
     </div>
 
-    <!-- SUB-TAB 3: COMPARE TWO FRAGRANCES (5-FACTOR WEIGHTED ENGINE) -->
+    <!-- SUB-TAB 3: COMPARE TWO FRAGRANCES (5-FACTOR WEIGHTED ENGINE + SHELF SCOPE) -->
     <div id="itab-compare" class="hidden space-y-5">
       <div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 space-y-4">
-        <div>
-          <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Compare Fragrance Similarity</h3>
-          <p class="text-xs text-[#6E6A61]">Weighted 5-factor match: <strong>Accords (38%)</strong> · <strong>Notes (34%)</strong> · <strong>Season (11%)</strong> · <strong>Day/Night (9%)</strong> · <strong>Gender (8%)</strong>.</p>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="relative">
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Fragrance A</label>
-            <input id="cmp-input-a" type="text" oninput="onCompareSearch('a')" placeholder="Search e.g. Afnan 9pm…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
-            <div id="cmp-drop-a" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto custom-scroll"></div>
-            <div id="cmp-picked-a" class="mt-2"></div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Compare Fragrance Similarity</h3>
+            <p class="text-xs text-[#6E6A61]">Weighted 5-factor match: <strong>Accords (38%)</strong> · <strong>Notes (34%)</strong> · <strong>Season (11%)</strong> · <strong>Day/Night (9%)</strong> · <strong>Gender (8%)</strong>.</p>
           </div>
-          <div class="relative">
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-[#6E6A61] mb-1">Fragrance B</label>
-            <input id="cmp-input-b" type="text" oninput="onCompareSearch('b')" placeholder="Search e.g. Ultra Male…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
-            <div id="cmp-drop-b" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto custom-scroll"></div>
-            <div id="cmp-picked-b" class="mt-2"></div>
+          <div class="flex items-center gap-1 bg-[#EFECE6] p-1 rounded-full self-start sm:self-auto">
+            <button id="cmp-mode-all" onclick="setCompareMode('all')" class="px-3 py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs">🌐 All Fragrances</button>
+            <button id="cmp-mode-shelf" onclick="setCompareMode('shelf')" class="px-3 py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]">📦 My Collections / Rankings</button>
+          </div>
+        </div>
+
+        <!-- Shelf Scope Bar (shown when comparing within collections/rankings) -->
+        <div id="cmp-shelf-scope" class="hidden rounded-2xl bg-[#FAF9F6] border border-[#E8E4DC] p-3.5 space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[#6E6A61]">Populate both sides from:</span>
+              <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-white cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="cmp-col-chk accent-[#0F5C5C]" value="have" checked onchange="onCompareScopeChange('col')" /> I have</label>
+              <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-white cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="cmp-col-chk accent-[#0F5C5C]" value="had" onchange="onCompareScopeChange('col')" /> I had</label>
+              <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-white cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="cmp-col-chk accent-[#0F5C5C]" value="want" onchange="onCompareScopeChange('col')" /> I want</label>
+              <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#E4E0D7] bg-white cursor-pointer flex items-center gap-1.5"><input type="checkbox" class="cmp-col-chk accent-[#0F5C5C]" value="tried" onchange="onCompareScopeChange('col')" /> I've tried</label>
+              <label class="px-2.5 py-1 rounded-full text-xs font-semibold border border-[#B9DDD9] bg-[#E6F2F1] text-[#0F5C5C] cursor-pointer flex items-center gap-1.5"><input id="cmp-all-ranked" type="checkbox" class="accent-[#0F5C5C]" onchange="onCompareScopeChange('ranked')" /> All Rankings</label>
+            </div>
+            <button onclick="findClosestPairInShelf()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747] transition">✨ Closest Pair in Shelf</button>
+          </div>
+          <div id="cmp-shelf-meta" class="text-[11px] text-[#6E6A61]"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 relative">
+          <!-- Side A -->
+          <div class="relative space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-[#6E6A61]">Fragrance A</label>
+              <button onclick="swapCompareSlots()" class="text-[11px] font-semibold text-[#0F5C5C] hover:underline">⇄ Swap A &amp; B</button>
+            </div>
+            <div id="cmp-search-wrap-a" class="relative">
+              <input id="cmp-input-a" type="text" oninput="onCompareSearch('a')" placeholder="Search all fragrances (e.g. Afnan 9pm)…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+              <div id="cmp-drop-a" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-64 overflow-y-auto custom-scroll"></div>
+            </div>
+            <div id="cmp-shelf-picker-a" class="hidden space-y-1.5">
+              <input id="cmp-shelf-filter-a" type="text" oninput="renderCompareShelfPickers()" placeholder="Filter shelf A…" class="w-full px-3 py-1.5 rounded-lg border border-[#E4E0D7] bg-[#FAF9F6] text-xs focus:outline-none focus:border-[#0F5C5C]" />
+              <div id="cmp-shelf-list-a" class="max-h-48 overflow-y-auto custom-scroll border border-[#E8E4DC] rounded-xl divide-y divide-[#F0EDE6] bg-white"></div>
+            </div>
+            <div id="cmp-picked-a"></div>
+          </div>
+
+          <!-- Side B -->
+          <div class="relative space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-[#6E6A61]">Fragrance B</label>
+              <span class="text-[11px] text-[#8A857B]">Click any card for full info</span>
+            </div>
+            <div id="cmp-search-wrap-b" class="relative">
+              <input id="cmp-input-b" type="text" oninput="onCompareSearch('b')" placeholder="Search all fragrances (e.g. Ultra Male)…" class="w-full px-3.5 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+              <div id="cmp-drop-b" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-[#E4E0D7] rounded-xl shadow-xl z-20 max-h-64 overflow-y-auto custom-scroll"></div>
+            </div>
+            <div id="cmp-shelf-picker-b" class="hidden space-y-1.5">
+              <input id="cmp-shelf-filter-b" type="text" oninput="renderCompareShelfPickers()" placeholder="Filter shelf B…" class="w-full px-3 py-1.5 rounded-lg border border-[#E4E0D7] bg-[#FAF9F6] text-xs focus:outline-none focus:border-[#0F5C5C]" />
+              <div id="cmp-shelf-list-b" class="max-h-48 overflow-y-auto custom-scroll border border-[#E8E4DC] rounded-xl divide-y divide-[#F0EDE6] bg-white"></div>
+            </div>
+            <div id="cmp-picked-b"></div>
           </div>
         </div>
       </div>
@@ -3310,14 +3356,130 @@ async function openFindSimilarModal(id) {
   }).join('') || `<div class="py-8 text-center text-sm text-[#6E6A61]">No similar fragrances found.</div>`;
 }
 
-// ==================== 4. COMPARE TWO FRAGRANCES ====================
+// ==================== 4. COMPARE TWO FRAGRANCES (GLOBAL + SHELF SCOPE + CLICKABLE CARDS) ====================
+let cmpMode = 'all'; // 'all' | 'shelf'
+
 function launchCompareWith(idA, idB = null) {
   document.getElementById('similar-modal').classList.add('hidden');
   closeDetailModal();
+  cmpMode = 'all';
   cmpSelected.a = String(idA);
   if (idB) cmpSelected.b = String(idB);
   setView('insights');
   setInsightTab('compare');
+}
+
+function launchCompareFromShelf(scopeType, colKey = null) {
+  cmpMode = 'shelf';
+  setView('insights');
+  setInsightTab('compare');
+  const allR = document.getElementById('cmp-all-ranked');
+  const chks = document.querySelectorAll('.cmp-col-chk');
+  if (scopeType === 'ranked') {
+    if (allR) allR.checked = true;
+    chks.forEach(c => { c.checked = false; });
+  } else {
+    if (allR) allR.checked = false;
+    chks.forEach(c => { c.checked = (c.value === colKey); });
+  }
+  renderCompareView();
+}
+
+function setCompareMode(mode) {
+  cmpMode = mode;
+  renderCompareView();
+}
+
+function onCompareScopeChange(source) {
+  const allR = document.getElementById('cmp-all-ranked');
+  if (source === 'ranked' && allR.checked) {
+    document.querySelectorAll('.cmp-col-chk').forEach(c => { c.checked = false; });
+  } else if (source === 'col') {
+    allR.checked = false;
+  }
+  renderCompareShelfPickers();
+}
+
+function getCompareShelfIds() {
+  const allR = document.getElementById('cmp-all-ranked')?.checked;
+  if (allR) {
+    return [...userState.tiers.love, ...userState.tiers.like, ...userState.tiers.dislike]
+      .map(e => String(e.id))
+      .filter(id => catalogById.has(id));
+  }
+  const cols = [...document.querySelectorAll('.cmp-col-chk:checked')].map(c => c.value);
+  return Object.entries(userState.items)
+    .filter(([id, it]) => cols.includes(it.collection) && catalogById.has(id))
+    .sort((a, b) => (scoreMap.get(a[0])?.rank ?? 9999) - (scoreMap.get(b[0])?.rank ?? 9999))
+    .map(([id]) => id);
+}
+
+function swapCompareSlots() {
+  const tmp = cmpSelected.a;
+  cmpSelected.a = cmpSelected.b;
+  cmpSelected.b = tmp;
+  renderCompareView();
+}
+
+function findClosestPairInShelf() {
+  const ids = getCompareShelfIds();
+  if (ids.length < 2) {
+    showToast('Need at least 2 fragrances in the selected shelf to find closest pair');
+    return;
+  }
+  let best = { total: -1, a: ids[0], b: ids[1] };
+  const cap = Math.min(ids.length, 60);
+  for (let i = 0; i < cap; i++) {
+    const rA = catalogById.get(ids[i]);
+    for (let j = i + 1; j < cap; j++) {
+      const rB = catalogById.get(ids[j]);
+      const s = computeFiveFactorSimilarity(rA, rB).total;
+      if (s > best.total) best = { total: s, a: ids[i], b: ids[j] };
+    }
+  }
+  cmpSelected.a = best.a;
+  cmpSelected.b = best.b;
+  renderCompareView();
+  showToast(`Closest pair in shelf: ${best.total}% match`);
+}
+
+function renderCompareShelfPickers() {
+  const ids = getCompareShelfIds();
+  const meta = document.getElementById('cmp-shelf-meta');
+  if (meta) meta.textContent = `${ids.length} fragrance${ids.length === 1 ? '' : 's'} available in selected scope — pick one on each side below.`;
+
+  ['a', 'b'].forEach(slot => {
+    const q = (document.getElementById(`cmp-shelf-filter-${slot}`)?.value || '').trim().toLowerCase();
+    const listEl = document.getElementById(`cmp-shelf-list-${slot}`);
+    if (!listEl) return;
+    const filtered = ids.filter(id => {
+      if (!q) return true;
+      const r = catalogById.get(id);
+      return `${fVal(r,'name')} ${fVal(r,'brand')} ${fVal(r,'accords')}`.toLowerCase().includes(q);
+    });
+    if (!filtered.length) {
+      listEl.innerHTML = `<div class="p-3 text-xs text-[#8A857B] text-center">No fragrances in this scope yet.</div>`;
+      return;
+    }
+    listEl.innerHTML = filtered.map(id => {
+      const r = catalogById.get(id);
+      const it = userState.items[id];
+      const colInfo = it ? COL_MAP[it.collection] : null;
+      const sc = scoreMap.get(id);
+      const isPicked = cmpSelected[slot] === id;
+      return `
+        <button type="button" onclick="pickCompareSlot('${slot}', '${id}')" class="w-full text-left px-3 py-2 flex items-center justify-between gap-2 transition ${isPicked ? 'bg-[#E6F2F1]' : 'hover:bg-[#FAF9F6]'}">
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-[#1C1B18] truncate">${isPicked ? '✓ ' : ''}${escapeHtml(fVal(r,'name'))}</div>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span class="text-[10px] text-[#6E6A61] truncate">${escapeHtml(fVal(r,'brand'))}</span>
+              ${colInfo ? `<span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${colInfo.color}">${colInfo.label}</span>` : ''}
+            </div>
+          </div>
+          ${sc ? `<span class="beli-badge beli-badge-sm ${getScoreClass(sc.score)}">${formatScore(sc.score)}</span>` : ''}
+        </button>`;
+    }).join('');
+  });
 }
 
 function onCompareSearch(slot) {
@@ -3354,9 +3516,18 @@ function onCompareSearch(slot) {
     } else {
       drop.innerHTML = results.map(r => {
         const rid = String(fVal(r, 'id'));
-        return `<button type="button" onclick="pickCompareSlot('${slot}', '${rid}')" class="w-full text-left px-3.5 py-2 hover:bg-[#E6F2F1] border-b border-[#F4F1EB] last:border-0">
-          <div class="text-xs font-bold text-[#1C1B18]">${escapeHtml(fVal(r, 'name'))}</div>
-          <div class="text-[11px] text-[#6E6A61]">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</div>
+        const it = userState.items[rid];
+        const colInfo = it ? COL_MAP[it.collection] : null;
+        const sc = scoreMap.get(rid);
+        return `<button type="button" onclick="pickCompareSlot('${slot}', '${rid}')" class="w-full text-left px-3.5 py-2 hover:bg-[#E6F2F1] border-b border-[#F4F1EB] last:border-0 flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-bold text-[#1C1B18] truncate">${escapeHtml(fVal(r, 'name'))}</div>
+            <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+              <span class="text-[11px] text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</span>
+              ${colInfo ? `<span class="text-[10px] font-bold px-1.5 py-0.2 rounded-full border ${colInfo.color}">${colInfo.label}</span>` : ''}
+            </div>
+          </div>
+          ${sc ? `<span class="beli-badge beli-badge-sm ${getScoreClass(sc.score)}">${formatScore(sc.score)}</span>` : ''}
         </button>`;
       }).join('');
     }
@@ -3366,38 +3537,64 @@ function onCompareSearch(slot) {
 
 function pickCompareSlot(slot, id) {
   cmpSelected[slot] = String(id);
-  document.getElementById(`cmp-drop-${slot}`).classList.add('hidden');
-  document.getElementById(`cmp-input-${slot}`).value = '';
+  document.getElementById(`cmp-drop-${slot}`)?.classList.add('hidden');
+  const inp = document.getElementById(`cmp-input-${slot}`);
+  if (inp) inp.value = '';
   renderCompareView();
 }
 
 function renderCompareView() {
+  // Update mode buttons & panels
+  const isShelf = cmpMode === 'shelf';
+  const btnAll = document.getElementById('cmp-mode-all');
+  const btnShelf = document.getElementById('cmp-mode-shelf');
+  if (btnAll && btnShelf) {
+    btnAll.className = !isShelf ? 'px-3 py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs' : 'px-3 py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
+    btnShelf.className = isShelf ? 'px-3 py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs' : 'px-3 py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
+  }
+  document.getElementById('cmp-shelf-scope')?.classList.toggle('hidden', !isShelf);
+  ['a', 'b'].forEach(slot => {
+    document.getElementById(`cmp-search-wrap-${slot}`)?.classList.toggle('hidden', isShelf);
+    document.getElementById(`cmp-shelf-picker-${slot}`)?.classList.toggle('hidden', !isShelf);
+  });
+  if (isShelf) renderCompareShelfPickers();
+
   ['a', 'b'].forEach(slot => {
     const box = document.getElementById(`cmp-picked-${slot}`);
     const id = cmpSelected[slot];
     const r = id ? catalogById.get(id) : null;
     if (!r) {
-      box.innerHTML = `<div class="text-xs text-[#8A857B] italic">No fragrance selected yet</div>`;
+      box.innerHTML = `<div class="text-xs text-[#8A857B] italic px-1">No fragrance selected yet</div>`;
     } else {
+      const it = userState.items[id];
+      const colInfo = it ? COL_MAP[it.collection] : null;
+      const sc = scoreMap.get(id);
       box.innerHTML = `
-        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF9F6] border border-[#E4E0D7]">
-          <div class="min-w-0">
-            <div class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}</div>
-            <div class="text-sm font-bold text-[#1C1B18] truncate">${escapeHtml(fVal(r, 'name'))}</div>
+        <div class="flex items-center justify-between gap-2.5 p-3 rounded-2xl bg-[#FAF9F6] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">
+          <button type="button" onclick="openDetailModal('${id}')" class="min-w-0 flex-1 text-left group">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</span>
+              ${colInfo ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${colInfo.color}">${colInfo.label}</span>` : `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-[#E8E4DC] text-[#8A857B]">Not in collections</span>`}
+            </div>
+            <div class="text-sm font-bold text-[#1C1B18] group-hover:text-[#0F5C5C] truncate mt-0.5">${escapeHtml(fVal(r, 'name'))} <span class="text-[11px] font-semibold text-[#0F5C5C]">↗</span></div>
+          </button>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${sc ? `<button type="button" onclick="openDetailModal('${id}')" class="beli-badge beli-badge-sm ${getScoreClass(sc.score)}" title="Your Score: ${formatScore(sc.score)}">${formatScore(sc.score)}</button>` : ''}
+            <button type="button" onclick="cmpSelected['${slot}']=null; renderCompareView();" class="text-xs text-[#8A857B] hover:text-[#C25447] px-1.5 py-1" title="Clear">✕</button>
           </div>
-          <button onclick="cmpSelected['${slot}']=null; renderCompareView();" class="text-xs text-[#8A857B] hover:text-[#C25447] px-2">✕</button>
         </div>`;
     }
   });
 
   const out = document.getElementById('cmp-result');
   if (!cmpSelected.a || !cmpSelected.b) {
-    out.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Select two fragrances above to see their weighted 5-factor similarity score and breakdown.</div>`;
+    out.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Select two fragrances above to see their weighted 5-factor similarity score, collection status, and full side-by-side breakdown.</div>`;
     return;
   }
 
-  const rA = catalogById.get(cmpSelected.a);
-  const rB = catalogById.get(cmpSelected.b);
+  const idA = cmpSelected.a, idB = cmpSelected.b;
+  const rA = catalogById.get(idA);
+  const rB = catalogById.get(idB);
   const sim = computeFiveFactorSimilarity(rA, rB);
   const verdict = sim.total >= 80 ? 'Very Similar / Clone Territory' : sim.total >= 65 ? 'Closely Related Vibe' : sim.total >= 45 ? 'Moderately Similar' : 'Distinct Scent Profiles';
 
@@ -3412,15 +3609,55 @@ function renderCompareView() {
       </div>
     </div>`;
 
+  const renderSideSpecCard = (id, r) => {
+    const it = userState.items[id];
+    const colInfo = it ? COL_MAP[it.collection] : null;
+    const sc = scoreMap.get(id);
+    const bs = getBestSeason(r);
+    const bo = getBestOccasion(r);
+    return `
+      <button type="button" onclick="openDetailModal('${id}')" class="w-full text-left rounded-2xl border border-[#E8E4DC] bg-[#FAF9F6] hover:border-[#0F5C5C] p-4 space-y-2.5 transition card-hover">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r,'brand'))}${fVal(r,'year') ? ` · ${escapeHtml(fVal(r,'year'))}` : ''}</div>
+            <div class="font-bold text-base text-[#1C1B18] hover:text-[#0F5C5C] truncate">${escapeHtml(fVal(r,'name'))}</div>
+            <div class="flex flex-wrap items-center gap-1.5 mt-1">
+              ${colInfo ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${colInfo.color}">${colInfo.label}</span>` : `<span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white border border-[#E8E4DC] text-[#8A857B]">Not in collections</span>`}
+              <span class="text-[10px] font-semibold text-[#0F5C5C]">Click for full info ↗</span>
+            </div>
+          </div>
+          <div class="beli-badge beli-badge-sm ${sc ? getScoreClass(sc.score) : 'score-none'}">${sc ? formatScore(sc.score) : '—'}</div>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-[#EAE6DD] text-[11px] text-[#5C5850]">
+          <div>Community: <strong class="text-[#1C1B18]">★ ${fNum(r,'rating_avg') ? fNum(r,'rating_avg').toFixed(2) : '—'}</strong></div>
+          <div>Gender: <strong class="text-[#1C1B18] capitalize">${escapeHtml(fVal(r,'gender') || '—')}</strong></div>
+          <div>Longevity: <strong class="text-[#1C1B18]">${longevityLabel(fNum(r,'longevity_avg'))}</strong></div>
+          <div>Sillage: <strong class="text-[#1C1B18]">${sillageLabel(fNum(r,'sillage_avg'))}</strong></div>
+          <div>Season: <strong class="text-[#1C1B18]">${bs ? `${bs.icon} ${bs.label}` : '—'}</strong></div>
+          <div>Occasion: <strong class="text-[#1C1B18]">${bo ? `${bo.icon} ${bo.label}` : '—'}</strong></div>
+        </div>
+      </button>`;
+  };
+
   out.innerHTML = `
     <div class="bg-white rounded-3xl border border-[#E8E4DC] p-6 space-y-6 animate-in">
       <div class="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-[#F0EDE6]">
         <div class="beli-badge beli-badge-lg ${sim.total >= 75 ? 'score-high' : sim.total >= 50 ? 'score-mid' : 'score-low'}">${sim.total}%</div>
         <div class="text-center sm:text-left">
           <div class="text-xs font-bold uppercase tracking-widest text-[#0F5C5C]">${verdict}</div>
-          <h3 class="font-serif-display text-xl font-bold text-[#1C1B18] mt-0.5">${escapeHtml(fVal(rA, 'name'))} <span class="text-[#8A857B] font-normal">vs</span> ${escapeHtml(fVal(rB, 'name'))}</h3>
+          <h3 class="font-serif-display text-xl font-bold text-[#1C1B18] mt-0.5">
+            <button onclick="openDetailModal('${idA}')" class="hover:text-[#0F5C5C] hover:underline">${escapeHtml(fVal(rA, 'name'))}</button>
+            <span class="text-[#8A857B] font-normal mx-1">vs</span>
+            <button onclick="openDetailModal('${idB}')" class="hover:text-[#0F5C5C] hover:underline">${escapeHtml(fVal(rB, 'name'))}</button>
+          </h3>
           <p class="text-xs text-[#6E6A61] mt-1">${sim.sharedAccords.length} shared accords · ${sim.sharedNotes.length} exact shared notes</p>
         </div>
+      </div>
+
+      <!-- Clickable Side-by-Side Spec Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        ${renderSideSpecCard(idA, rA)}
+        ${renderSideSpecCard(idB, rB)}
       </div>
 
       <div class="space-y-3">
