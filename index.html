@@ -90,7 +90,7 @@
 <body class="min-h-screen flex flex-col">
 
 <!-- ==================== AUTH / LOGIN SCREEN ==================== -->
-<div id="auth-gate" class="hidden fixed inset-0 z-50 bg-[#FAF9F6] flex items-center justify-center p-4 overflow-y-auto">
+<div id="auth-gate" class="hidden fixed inset-0 z-[75] bg-[#FAF9F6] flex items-center justify-center p-4 overflow-y-auto">
   <div class="w-full max-w-md bg-white rounded-3xl border border-[#E8E4DC] shadow-xl p-7 sm:p-8 space-y-6 animate-in my-auto">
     <div class="text-center space-y-2">
       <div class="w-12 h-12 rounded-2xl bg-[#0F5C5C] text-white mx-auto flex items-center justify-center shadow-sm">
@@ -126,17 +126,6 @@
       <div id="auth-success" class="hidden text-xs font-semibold text-[#0F5C5C] bg-[#E6F2F1] border border-[#B9DDD9] rounded-xl px-3 py-2"></div>
       <button id="auth-submit-btn" type="submit" class="w-full py-2.5 rounded-full text-sm font-bold bg-[#0F5C5C] text-white hover:bg-[#0B4747] transition shadow-sm">Sign In</button>
     </form>
-
-    <!-- Collapsible Supabase Connection Settings -->
-    <details id="auth-connect-box" class="bg-[#FAF9F6] rounded-2xl border border-[#E8E4DC] p-3.5">
-      <summary class="text-xs font-bold text-[#3F3C36] cursor-pointer select-none">Connect Supabase Cloud Backend</summary>
-      <div class="space-y-2.5 mt-3">
-        <p class="text-[11px] text-[#6E6A61] leading-relaxed">Paste your free Supabase Project URL &amp; Anon Key to enable real login, cross-device sync, and all 140,228 fragrances.</p>
-        <input id="cfg-sb-url" type="url" placeholder="https://your-project.supabase.co" class="w-full px-3 py-2 rounded-lg border border-[#E4E0D7] bg-white text-xs focus:outline-none focus:border-[#0F5C5C]" />
-        <input id="cfg-sb-key" type="text" placeholder="eyJhbGciOi... (anon public key)" class="w-full px-3 py-2 rounded-lg border border-[#E4E0D7] bg-white text-xs focus:outline-none focus:border-[#0F5C5C]" />
-        <button type="button" onclick="saveSupabaseConfigFromUI()" class="w-full py-2 rounded-full text-xs font-bold bg-[#1C1B18] text-white hover:bg-black transition">Save &amp; Connect Cloud</button>
-      </div>
-    </details>
 
     <div class="pt-1 border-t border-[#F0EDE6] text-center">
       <button type="button" onclick="enterPreviewMode()" class="text-xs font-semibold text-[#6E6A61] hover:text-[#0F5C5C] transition">
@@ -622,35 +611,45 @@
 
     <!-- SUB-TAB 1: ACTIVITY FEED -->
     <div id="stab-feed" class="space-y-4">
-      <div class="flex items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-1 bg-[#EFECE6] p-1 rounded-full">
           <button id="feed-tab-following" onclick="setFeedScope('following')" class="px-3.5 py-1.5 rounded-full text-xs font-bold transition">Following</button>
           <button id="feed-tab-global" onclick="setFeedScope('global')" class="px-3.5 py-1.5 rounded-full text-xs font-bold transition">Community</button>
         </div>
-        <button onclick="loadSocialFeed()" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#3F3C36] hover:border-[#0F5C5C]">↻ Refresh</button>
+        <button id="feed-refresh-btn" onclick="loadSocialFeed(false)" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#3F3C36] hover:border-[#0F5C5C] transition">↻ Refresh</button>
       </div>
+      <div id="feed-status-bar" class="hidden text-[11px] text-[#6E6A61] px-1"></div>
       <div id="social-feed-list" class="space-y-3"></div>
+      <div id="social-feed-more" class="hidden text-center pt-1"></div>
     </div>
 
-    <!-- SUB-TAB 2: FIND FRIENDS & FOLLOWING -->
+    <!-- SUB-TAB 2: FIND FRIENDS & CLICKABLE FOLLOWING/FOLLOWERS -->
     <div id="stab-friends" class="hidden space-y-5">
+      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <button type="button" onclick="openFollowsModal(currentUser?.id || 'me', 'following')" class="bg-white rounded-2xl border border-[#E8E4DC] p-4 sm:p-5 text-left hover:border-[#0F5C5C] card-hover transition flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-[#6E6A61]">Following</div>
+            <div id="cnt-following" class="font-serif-display text-3xl font-bold text-[#0F5C5C] mt-0.5">0</div>
+            <div class="text-[11px] text-[#8A857B] mt-0.5">Tap to view everyone →</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-[#E6F2F1] text-[#0F5C5C] flex items-center justify-center text-lg shrink-0">👥</div>
+        </button>
+        <button type="button" onclick="openFollowsModal(currentUser?.id || 'me', 'followers')" class="bg-white rounded-2xl border border-[#E8E4DC] p-4 sm:p-5 text-left hover:border-[#0F5C5C] card-hover transition flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-[#6E6A61]">Followers</div>
+            <div id="cnt-followers" class="font-serif-display text-3xl font-bold text-[#1C1B18] mt-0.5">0</div>
+            <div class="text-[11px] text-[#8A857B] mt-0.5">Tap to view everyone →</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-[#F4F1EB] text-[#5C5850] flex items-center justify-center text-lg shrink-0">✨</div>
+        </button>
+      </div>
+
       <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 sm:p-5 space-y-3">
         <h3 class="font-serif-display text-lg font-bold text-[#1C1B18]">Find Fragrance Friends</h3>
         <div class="flex gap-2">
           <input id="friend-search-input" type="text" oninput="searchPeopleDebounced()" placeholder="Search by @username or display name…" class="flex-1 px-4 py-2.5 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-sm focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
         </div>
         <div id="people-search-results" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1"></div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 sm:p-5 space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Following (<span id="cnt-following">0</span>)</h4>
-          <div id="following-list" class="space-y-2"></div>
-        </div>
-        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 sm:p-5 space-y-3">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Followers (<span id="cnt-followers">0</span>)</h4>
-          <div id="followers-list" class="space-y-2"></div>
-        </div>
       </div>
     </div>
 
@@ -700,7 +699,7 @@
 </main>
 
 <!-- ==================== MODAL 1: BELI BINARY RANKING ==================== -->
-<div id="rank-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+<div id="rank-modal" class="hidden fixed inset-0 z-[70] bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
   <div class="bg-[#FAF9F6] w-full max-w-2xl rounded-3xl border border-[#E4E0D7] shadow-2xl overflow-hidden my-auto animate-in">
     <!-- Modal Header -->
     <div class="bg-white px-5 sm:px-6 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
@@ -800,7 +799,7 @@
 </div>
 
 <!-- ==================== MODAL 2: FRAGRANCE DETAIL (ALL 59 CSV FIELDS) ==================== -->
-<div id="detail-modal" class="hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5">
+<div id="detail-modal" class="hidden fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5">
   <div class="bg-[#FAF9F6] w-full max-w-3xl max-h-[92vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
     <div class="bg-white px-5 sm:px-6 py-4 border-b border-[#E8E4DC] flex items-start justify-between gap-3 shrink-0">
       <div class="min-w-0">
@@ -816,7 +815,7 @@
 </div>
 
 <!-- ==================== MODAL 3: CATALOG CSV IMPORT & BACKUP ==================== -->
-<div id="catalog-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+<div id="catalog-modal" class="hidden fixed inset-0 z-[65] bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
   <div class="bg-[#FAF9F6] w-full max-w-xl max-h-[90vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
     <div class="bg-white px-6 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
       <div>
@@ -882,7 +881,7 @@
 
 
 <!-- ==================== MODAL 4: RANDOMIZER SPOTLIGHT ==================== -->
-<div id="random-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+<div id="random-modal" class="hidden fixed inset-0 z-[65] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
   <div class="bg-[#FAF9F6] w-full max-w-md rounded-3xl border border-[#E4E0D7] shadow-2xl p-6 text-center space-y-4 animate-in">
     <div class="text-xs font-bold uppercase tracking-widest text-[#9A6B19]" id="rnd-kicker">Random Pick</div>
     <div id="rnd-body"></div>
@@ -896,7 +895,7 @@
 </div>
 
 <!-- ==================== MODAL 5: FIND SIMILAR (ALL 140K DATASET) ==================== -->
-<div id="similar-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+<div id="similar-modal" class="hidden fixed inset-0 z-[65] bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
   <div class="bg-[#FAF9F6] w-full max-w-2xl max-h-[88vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
     <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
       <div>
@@ -910,7 +909,7 @@
 </div>
 
 <!-- ==================== MODAL 6: SHAREABLE TOP 5 CARD ==================== -->
-<div id="top5-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+<div id="top5-modal" class="hidden fixed inset-0 z-[65] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
   <div class="bg-[#FAF9F6] w-full max-w-lg max-h-[92vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
     <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between">
       <div>
@@ -930,10 +929,10 @@
 </div>
 
 
-<!-- ==================== MODAL 7: FRIEND PROFILE & TASTE COMPATIBILITY ==================== -->
-<div id="friend-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-  <div class="bg-[#FAF9F6] w-full max-w-2xl max-h-[90vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
-    <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between gap-3">
+<!-- ==================== MODAL 7: FRIEND PROFILE, FULL SHELF & FILTERS ==================== -->
+<div id="friend-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2 sm:p-5">
+  <div class="bg-[#FAF9F6] w-full max-w-4xl max-h-[92vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
+    <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between gap-3 shrink-0">
       <div class="flex items-center gap-3 min-w-0">
         <div id="fm-avatar" class="w-11 h-11 rounded-2xl text-white font-serif-display text-lg font-bold flex items-center justify-center shrink-0" style="background:#0F5C5C">F</div>
         <div class="min-w-0">
@@ -943,15 +942,36 @@
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <button id="fm-follow-btn" class="px-4 py-1.5 rounded-full text-xs font-bold transition"></button>
-        <button onclick="document.getElementById('friend-modal').classList.add('hidden')" class="w-8 h-8 rounded-full hover:bg-[#EFECE6] flex items-center justify-center text-[#6E6A61]">✕</button>
+        <button onclick="closeFriendModal()" class="w-8 h-8 rounded-full hover:bg-[#EFECE6] flex items-center justify-center text-[#6E6A61]">✕</button>
       </div>
     </div>
-    <div id="fm-body" class="overflow-y-auto custom-scroll p-5 space-y-5"></div>
+    <div id="fm-body" class="overflow-y-auto custom-scroll p-4 sm:p-5 space-y-4"></div>
+  </div>
+</div>
+
+<!-- ==================== MODAL 8: CLICKABLE FOLLOWING / FOLLOWERS LIST ==================== -->
+<div id="follows-modal" class="hidden fixed inset-0 z-[55] bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+  <div class="bg-[#FAF9F6] w-full max-w-lg max-h-[85vh] rounded-3xl border border-[#E4E0D7] shadow-2xl flex flex-col overflow-hidden animate-in">
+    <div class="bg-white px-5 py-4 border-b border-[#E8E4DC] flex items-center justify-between gap-3 shrink-0">
+      <div class="min-w-0">
+        <div class="text-[11px] font-bold uppercase tracking-widest text-[#0F5C5C]" id="flm-kicker">Connections</div>
+        <h2 class="font-serif-display text-lg font-bold text-[#1C1B18] truncate" id="flm-title">Following &amp; Followers</h2>
+      </div>
+      <button onclick="closeFollowsModal()" class="w-8 h-8 rounded-full hover:bg-[#EFECE6] flex items-center justify-center text-[#6E6A61] shrink-0">✕</button>
+    </div>
+    <div class="bg-white px-5 py-3 border-b border-[#F0EDE6] space-y-2.5 shrink-0">
+      <div class="grid grid-cols-2 bg-[#EFECE6] p-1 rounded-full">
+        <button id="flm-tab-following" onclick="switchFollowsModalTab('following')" class="py-1.5 rounded-full text-xs font-bold transition">Following (0)</button>
+        <button id="flm-tab-followers" onclick="switchFollowsModalTab('followers')" class="py-1.5 rounded-full text-xs font-bold transition">Followers (0)</button>
+      </div>
+      <input id="flm-search" type="text" oninput="renderFollowsModalList()" placeholder="Filter by @username or name…" class="w-full px-3.5 py-2 rounded-xl border border-[#E4E0D7] bg-[#FAF9F6] text-xs focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+    </div>
+    <div id="flm-list" class="overflow-y-auto custom-scroll p-4 space-y-2"></div>
   </div>
 </div>
 
 <!-- TOAST -->
-<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
+<div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[80] pointer-events-none opacity-0 transition-opacity duration-200">
   <div id="toast-inner" class="px-4 py-2.5 rounded-full bg-[#1C1B18] text-white text-xs sm:text-sm font-semibold shadow-lg"></div>
 </div>
 
@@ -1055,29 +1075,14 @@ function setAuthMode(mode) {
 
 function updateAuthBanner() {
   const banner = document.getElementById('auth-cloud-banner');
-  const cfg = getEffectiveSBConfig();
-  document.getElementById('cfg-sb-url').value = cfg.url || '';
-  document.getElementById('cfg-sb-key').value = cfg.anonKey || '';
+  if (!banner) return;
   if (sbClient) {
     banner.className = 'rounded-2xl p-3 text-xs border bg-[#E6F2F1] border-[#B9DDD9] text-[#0F5C5C]';
-    banner.innerHTML = '<strong>Cloud Sync Connected</strong> · Sign in to sync your collections &amp; binary rankings across all devices.';
+    banner.innerHTML = '<strong>Cloud Sync Connected</strong> · Sign in to sync your collections, rankings &amp; social feed across all devices.';
   } else {
     banner.className = 'rounded-2xl p-3 text-xs border bg-[#FDF7EB] border-[#EDD8B1] text-[#8C5E14]';
-    banner.innerHTML = '<strong>Preview Mode</strong> · Connect a free Supabase project below (or deploy the kit) for persistent login &amp; cross-device sync.';
+    banner.innerHTML = '<strong>Offline / Preview Mode</strong> · Cloud sync is currently unavailable. You can continue below in Local Preview.';
   }
-}
-
-function saveSupabaseConfigFromUI() {
-  const url = document.getElementById('cfg-sb-url').value.trim();
-  const anonKey = document.getElementById('cfg-sb-key').value.trim();
-  if (!url || !anonKey) {
-    showToast('Enter both Project URL and Anon Key');
-    return;
-  }
-  try { localStorage.setItem(SB_CFG_STORAGE, JSON.stringify({ url, anonKey })); } catch (e) {}
-  initSupabaseClient();
-  updateAuthBanner();
-  showToast('Supabase connected! Sign in or create an account.');
 }
 
 async function handleAuthSubmit(e) {
@@ -1088,9 +1093,8 @@ async function handleAuthSubmit(e) {
   okEl.classList.add('hidden');
 
   if (!sbClient) {
-    errEl.textContent = 'Connect your Supabase URL & Anon Key below first, or click "Continue without login" for local preview.';
+    errEl.textContent = 'Cloud login is unavailable right now. Click "Continue without login" below for local preview.';
     errEl.classList.remove('hidden');
-    document.getElementById('auth-connect-box').open = true;
     return;
   }
 
@@ -1128,6 +1132,35 @@ function objToRowArray(obj) {
   return CSV_COLUMNS.map(c => obj[c] ?? '');
 }
 
+// Fetch any missing perfume rows from Supabase in safe chunks of 100
+async function ensurePerfumesInCatalog(ids) {
+  if (!sbClient || !Array.isArray(ids) || !ids.length) return;
+  const missingNums = [...new Set(
+    ids.map(x => String(x))
+      .filter(id => id && !catalogById.has(id))
+      .map(id => parseInt(id, 10))
+      .filter(n => Number.isFinite(n) && n > 0)
+  )];
+  if (!missingNums.length) return;
+  const CHUNK = 100;
+  for (let i = 0; i < missingNums.length; i += CHUNK) {
+    const batch = missingNums.slice(i, i + CHUNK);
+    try {
+      const { data: pRows, error } = await sbClient
+        .from('perfumes')
+        .select('*')
+        .in('id', batch);
+      if (!error && Array.isArray(pRows)) {
+        pRows.forEach(p => {
+          catalogById.set(String(p.id), objToRowArray(p));
+        });
+      }
+    } catch (e) {
+      console.warn('Perfume batch fetch warning:', e);
+    }
+  }
+}
+
 async function onSignedIn(user) {
   currentUser = user;
   document.getElementById('auth-gate').classList.add('hidden');
@@ -1158,20 +1191,14 @@ async function onSignedIn(user) {
         wearLogs: Array.isArray(data.wear_logs) ? data.wear_logs : (userState.wearLogs || [])
       };
       recomputeScores();
-      // Fetch any perfume rows referenced in user's library that aren't in local map
-      const missingIds = Object.keys(userState.items).filter(id => !catalogById.has(String(id)));
-      if (missingIds.length > 0) {
-        const { data: pRows } = await sbClient
-          .from('perfumes')
-          .select('*')
-          .in('id', missingIds.map(x => parseInt(x, 10)).filter(Boolean));
-        if (pRows) {
-          pRows.forEach(p => {
-            const arr = objToRowArray(p);
-            catalogById.set(String(p.id), arr);
-          });
-        }
-      }
+      // Fetch any perfume rows referenced in user's library or tiers that aren't in local map
+      const allOwnIds = [
+        ...Object.keys(userState.items),
+        ...userState.tiers.love.map(e => String(e.id)),
+        ...userState.tiers.like.map(e => String(e.id)),
+        ...userState.tiers.dislike.map(e => String(e.id))
+      ];
+      await ensurePerfumesInCatalog(allOwnIds);
     }
 
     // Check total cloud perfumes count
@@ -1683,7 +1710,12 @@ function setView(view) {
       mBtn.className = 'mnav-pill flex-1 py-1.5 rounded-lg text-xs font-semibold transition text-[#6E6A61]';
     }
   });
-  refreshCurrentView();
+  if (view === 'social') {
+    updateGlobalStats();
+    setSocialTab(activeSocialTab);
+  } else {
+    refreshCurrentView();
+  }
 }
 
 function openCollectionTab(colKey) {
@@ -1697,7 +1729,18 @@ function refreshCurrentView() {
   else if (currentView === 'collections') renderCollections();
   else if (currentView === 'discover') renderDiscover();
   else if (currentView === 'insights') setInsightTab(activeInsightTab);
-  else if (currentView === 'social') setSocialTab(activeSocialTab);
+  else if (currentView === 'social') {
+    if (activeSocialTab === 'feed') {
+      if (!feedPosts.length) setSocialTab('feed');
+    } else if (activeSocialTab === 'friends') {
+      updateFollowCountsUI();
+    } else {
+      setSocialTab(activeSocialTab);
+    }
+  }
+  if (typeof friendViewState !== 'undefined' && friendViewState.userId && !document.getElementById('friend-modal').classList.contains('hidden')) {
+    renderFriendShelfList();
+  }
 }
 
 function updateGlobalStats() {
@@ -2401,18 +2444,49 @@ document.addEventListener('keydown', (e) => {
   } else if (e.key === 'Escape') {
     if (!document.getElementById('rank-modal').classList.contains('hidden')) closeRankModal();
     else if (!document.getElementById('catalog-modal').classList.contains('hidden')) closeCatalogModal();
+    else if (!document.getElementById('similar-modal').classList.contains('hidden')) document.getElementById('similar-modal').classList.add('hidden');
+    else if (!document.getElementById('random-modal').classList.contains('hidden')) document.getElementById('random-modal').classList.add('hidden');
+    else if (!document.getElementById('top5-modal').classList.contains('hidden')) document.getElementById('top5-modal').classList.add('hidden');
     else if (!document.getElementById('detail-modal').classList.contains('hidden')) closeDetailModal();
+    else if (!document.getElementById('follows-modal').classList.contains('hidden')) closeFollowsModal();
+    else if (!document.getElementById('friend-modal').classList.contains('hidden')) closeFriendModal();
   }
 });
 
 // ==================== FRAGRANCE DETAIL MODAL (ALL 59 CSV FIELDS) ====================
-function openDetailModal(id) {
+async function openDetailModal(id) {
   id = String(id);
-  if (!catalogById.has(id)) return;
+  if (!id) return;
   detailOpenId = id;
+  const modal = document.getElementById('detail-modal');
+  modal.classList.remove('hidden');
+
+  if (!catalogById.has(id)) {
+    document.getElementById('dm-brand-line').innerHTML = `<span>Loading fragrance…</span>`;
+    document.getElementById('dm-name').textContent = 'Fetching details…';
+    document.getElementById('dm-subline').innerHTML = '';
+    document.getElementById('dm-body').innerHTML = `
+      <div class="py-16 flex flex-col items-center justify-center text-center gap-3">
+        <div class="w-9 h-9 rounded-full border-4 border-[#E4E0D7] border-t-[#0F5C5C] animate-spin"></div>
+        <p class="text-xs text-[#6E6A61]">Loading fragrance card from the catalog…</p>
+      </div>`;
+    await ensurePerfumesInCatalog([id]);
+    if (detailOpenId !== id) return;
+    if (!catalogById.has(id)) {
+      document.getElementById('dm-brand-line').innerHTML = `<span>Catalog Notice</span>`;
+      document.getElementById('dm-name').textContent = 'Fragrance #' + id;
+      document.getElementById('dm-subline').innerHTML = '';
+      document.getElementById('dm-body').innerHTML = `
+        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-center space-y-2">
+          <div class="font-serif-display text-base font-bold text-[#1C1B18]">Fragrance details not cached locally</div>
+          <p class="text-xs text-[#6E6A61]">This fragrance wasn't found in the local preview catalog. Make sure you're signed in to cloud sync (or load the full CSV catalog) to view all 140,228 fragrances.</p>
+        </div>`;
+      return;
+    }
+  }
+
   renderDetailModal(id);
   loadFriendsTakesForDetail(id);
-  document.getElementById('detail-modal').classList.remove('hidden');
 }
 
 function closeDetailModal() {
@@ -4220,9 +4294,13 @@ function downloadTop5Card() {
 
 
 
-// ==================== SILLAGE v3 SOCIAL ENGINE (PROFILES, FOLLOWS, FEED, LIKES, COMMENTS, FRIENDS' TAKES) ====================
+// ==================== SILLAGE v4 SOCIAL ENGINE (SAMPLED FEED, CLICKABLE FOLLOWS, FULL FRIEND SHELF + FILTERS) ====================
 let activeSocialTab = 'feed';
 let feedScope = 'following';
+const FEED_PAGE_SIZE = 10;
+const COMMUNITY_SAMPLE_WINDOW = 36;
+const FRIEND_SHELF_PAGE_SIZE = 50;
+
 let myProfile = null;
 let myFollowingIds = new Set();
 let myFollowerIds = new Set();
@@ -4231,7 +4309,36 @@ let friendLibCache = new Map();    // user_id -> { items, tiers, scoreMap }
 let selectedAvatarColor = '#0F5C5C';
 let peopleSearchTimer = null;
 
-// Demo mock profiles & feed for Canvas Preview Mode (never written to Supabase)
+// Feed state (bounded & in-place mutable)
+let feedPosts = [];
+let feedCursor = null;
+let feedHasMore = false;
+let feedLoading = false;
+
+// Clickable Following/Followers modal state
+let followsModalState = {
+  userId: null,
+  tab: 'following',
+  followingIds: [],
+  followerIds: [],
+  title: 'Connections'
+};
+
+// Full Friend Profile & Filtered Shelf state
+let friendViewState = {
+  userId: null,
+  profile: null,
+  items: {},
+  tiers: { love: [], like: [], dislike: [] },
+  scoreMap: new Map(),
+  tab: 'ranked', // 'ranked' | 'have' | 'had' | 'want' | 'tried' | 'all'
+  limit: FRIEND_SHELF_PAGE_SIZE,
+  followingCount: 0,
+  followerCount: 0,
+  compatPct: null
+};
+
+// Demo mock profiles for Preview Mode (never written to Supabase)
 const DEMO_PROFILES = [
   { user_id: 'demo_maya', username: 'maya_scents', display_name: 'Maya Chen', bio: 'Warm vanilla, amber & niche woody gourmands', avatar_color: '#C48B2C', is_public: true },
   { user_id: 'demo_jordan', username: 'jordan_sillage', display_name: 'Jordan Rivera', bio: 'Fresh citrus by day, smoky oud by night', avatar_color: '#4C5C8A', is_public: true }
@@ -4282,6 +4389,26 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+async function ensureProfilesCached(userIds) {
+  if (!sbClient || !Array.isArray(userIds) || !userIds.length) return;
+  const missing = [...new Set(userIds.filter(u => u && !String(u).startsWith('demo_') && !profilesCache.has(u)))];
+  if (!missing.length) return;
+  const CHUNK = 100;
+  for (let i = 0; i < missing.length; i += CHUNK) {
+    try {
+      const { data } = await sbClient.from('profiles').select('*').in('user_id', missing.slice(i, i + CHUNK));
+      (data || []).forEach(p => profilesCache.set(p.user_id, p));
+    } catch (e) {}
+  }
+}
+
+function updateFollowCountsUI() {
+  const cf = document.getElementById('cnt-following');
+  const cr = document.getElementById('cnt-followers');
+  if (cf) cf.textContent = (sbClient && currentUser) ? myFollowingIds.size : '0';
+  if (cr) cr.textContent = (sbClient && currentUser) ? myFollowerIds.size : '0';
+}
+
 async function initSocialForUser() {
   if (!sbClient || !currentUser) return;
   try {
@@ -4306,13 +4433,14 @@ async function initSocialForUser() {
       selectedAvatarColor = prof.avatar_color || '#0F5C5C';
     }
 
-    // 2. Load following & followers
+    // 2. Load following & followers ID sets (lightweight ID-only query)
     const [f1, f2] = await Promise.all([
       sbClient.from('follows').select('following_id').eq('follower_id', currentUser.id),
       sbClient.from('follows').select('follower_id').eq('following_id', currentUser.id)
     ]);
     myFollowingIds = new Set((f1.data || []).map(r => r.following_id));
     myFollowerIds = new Set((f2.data || []).map(r => r.follower_id));
+    updateFollowCountsUI();
   } catch (e) {
     console.warn('Social init skipped (run supabase_migration_v3.sql to enable):', e);
   }
@@ -4352,17 +4480,51 @@ function setSocialTab(tab) {
   const badge = document.getElementById('social-mode-badge');
   badge.textContent = (sbClient && currentUser) ? `@${myProfile?.username || currentUser.email.split('@')[0]}` : 'Preview Mode (Sign in for live social)';
 
-  if (tab === 'feed') loadSocialFeed();
+  if (tab === 'feed') loadSocialFeed(false);
   else if (tab === 'friends') renderFriendsTab();
   else if (tab === 'profile') renderMyProfileTab();
 }
 
 function setFeedScope(scope) {
   feedScope = scope;
-  loadSocialFeed();
+  feedPosts = [];
+  feedCursor = null;
+  feedHasMore = false;
+  loadSocialFeed(false);
 }
 
-async function loadSocialFeed() {
+// Pick a small, diverse sample of posts across users so Community never overloads
+function sampleDiversePosts(rawPosts, targetCount = FEED_PAGE_SIZE) {
+  if (!Array.isArray(rawPosts) || rawPosts.length <= targetCount) return rawPosts || [];
+  // Fisher-Yates shuffle over the bounded recent window
+  const pool = [...rawPosts];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = [];
+  const leftovers = [];
+  const perUser = {};
+  for (const post of pool) {
+    const cnt = perUser[post.user_id] || 0;
+    if (picked.length < targetCount && cnt < 2) {
+      picked.push(post);
+      perUser[post.user_id] = cnt + 1;
+    } else {
+      leftovers.push(post);
+    }
+  }
+  while (picked.length < targetCount && leftovers.length) {
+    picked.push(leftovers.shift());
+  }
+  // Present sampled batch newest-first for comfortable reading
+  picked.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  return picked;
+}
+
+async function loadSocialFeed(append = false) {
+  if (feedLoading) return;
+
   document.getElementById('feed-tab-following').className = feedScope === 'following'
     ? 'px-3.5 py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs'
     : 'px-3.5 py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
@@ -4370,30 +4532,72 @@ async function loadSocialFeed() {
     ? 'px-3.5 py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs'
     : 'px-3.5 py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
 
+  const refreshBtn = document.getElementById('feed-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.textContent = feedScope === 'global' ? '↻ Fresh Picks' : '↻ Refresh';
+  }
+
   const list = document.getElementById('social-feed-list');
+  const statusBar = document.getElementById('feed-status-bar');
+  const moreWrap = document.getElementById('social-feed-more');
+
   if (!sbClient || !currentUser) {
-    // Interactive Preview Feed in Canvas
     const sample1 = catalogRows[0], sample2 = catalogRows[5] || catalogRows[1];
-    const demoPosts = [
+    feedPosts = [
       { id: -1, user_id: 'demo_maya', action_type: 'ranked', perfume_id: fVal(sample1,'id'), perfume_name: fVal(sample1,'name'), perfume_brand: fVal(sample1,'brand'), score: 9.3, collection: 'have', note: 'Crisp, effortless summer staple — gets compliments every time.', created_at: new Date(Date.now()-3600000*2).toISOString(), likes: 4, liked: false, comments: [{ username: 'jordan_sillage', body: 'Absolute classic!' }] },
       { id: -2, user_id: 'demo_jordan', action_type: 'sotd', perfume_id: fVal(sample2,'id'), perfume_name: fVal(sample2,'name'), perfume_brand: fVal(sample2,'brand'), score: 8.6, collection: 'have', note: 'Wearing this to dinner tonight.', created_at: new Date(Date.now()-3600000*7).toISOString(), likes: 2, liked: true, comments: [] }
     ];
     DEMO_PROFILES.forEach(p => profilesCache.set(p.user_id, p));
-    list.innerHTML = `<div class="bg-[#FDF7EB] border border-[#EDD8B1] rounded-2xl p-3 text-xs text-[#8C5E14]"><strong>Preview Feed</strong> · Sign in to your Supabase account after running <code>supabase_migration_v3.sql</code> to follow real friends, post activity, and comment.</div>` + demoPosts.map(renderFeedCard).join('');
+    if (statusBar) statusBar.classList.add('hidden');
+    if (moreWrap) moreWrap.classList.add('hidden');
+    list.innerHTML = `<div class="bg-[#FDF7EB] border border-[#EDD8B1] rounded-2xl p-3 text-xs text-[#8C5E14]"><strong>Preview Feed</strong> · Sign in to your account to follow real friends, post activity, and comment.</div>` + feedPosts.map(renderFeedCard).join('');
     return;
   }
 
-  list.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Loading activity feed…</div>`;
+  if (!append) {
+    feedPosts = [];
+    feedCursor = null;
+    feedHasMore = false;
+    list.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center text-sm text-[#6E6A61]">Loading activity feed…</div>`;
+    if (moreWrap) moreWrap.classList.add('hidden');
+  }
 
+  feedLoading = true;
   try {
-    let q = sbClient.from('activity_feed').select('*').order('created_at', { ascending: false }).limit(40);
+    let selectedPosts = [];
+
     if (feedScope === 'following') {
       const ids = [currentUser.id, ...myFollowingIds];
-      q = q.in('user_id', ids);
+      let q = sbClient
+        .from('activity_feed')
+        .select('*')
+        .in('user_id', ids)
+        .order('created_at', { ascending: false })
+        .limit(FEED_PAGE_SIZE + 1);
+      if (append && feedCursor) q = q.lt('created_at', feedCursor);
+      const { data: raw, error } = await q;
+      if (error) throw error;
+      const rows = raw || [];
+      feedHasMore = rows.length > FEED_PAGE_SIZE;
+      selectedPosts = rows.slice(0, FEED_PAGE_SIZE);
+      if (selectedPosts.length) {
+        feedCursor = selectedPosts[selectedPosts.length - 1].created_at;
+      }
+    } else {
+      // Community: fetch a bounded recent window and sample a small diverse set (<= FEED_PAGE_SIZE)
+      const { data: raw, error } = await sbClient
+        .from('activity_feed')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(COMMUNITY_SAMPLE_WINDOW);
+      if (error) throw error;
+      selectedPosts = sampleDiversePosts(raw || [], FEED_PAGE_SIZE);
+      feedHasMore = false;
     }
-    const { data: posts, error } = await q;
-    if (error) throw error;
-    if (!posts || !posts.length) {
+
+    if (!append && !selectedPosts.length) {
+      if (statusBar) statusBar.classList.add('hidden');
+      if (moreWrap) moreWrap.classList.add('hidden');
       list.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-8 text-center space-y-2">
         <div class="font-serif-display text-lg font-bold text-[#1C1B18]">No activity here yet</div>
         <p class="text-xs text-[#6E6A61]">Rate a fragrance, log your SOTD, or follow friends under <strong>Friends &amp; People</strong> to fill your feed!</p>
@@ -4401,20 +4605,20 @@ async function loadSocialFeed() {
       return;
     }
 
-    // Batch fetch profiles, likes, comments
-    const postIds = posts.map(p => p.id);
-    const userIds = [...new Set(posts.map(p => p.user_id))];
-    const [profRes, likeRes, commRes] = await Promise.all([
-      sbClient.from('profiles').select('*').in('user_id', userIds),
+    // Batch fetch profiles, likes, comments, AND missing perfume rows ONLY for these <=10 posts
+    const postIds = selectedPosts.map(p => p.id);
+    const userIds = [...new Set(selectedPosts.map(p => p.user_id))];
+    const perfumeIds = selectedPosts.map(p => p.perfume_id);
+
+    const [likeRes, commRes] = await Promise.all([
       sbClient.from('activity_likes').select('activity_id, user_id').in('activity_id', postIds),
-      sbClient.from('activity_comments').select('*').in('activity_id', postIds).order('created_at', { ascending: true })
+      sbClient.from('activity_comments').select('*').in('activity_id', postIds).order('created_at', { ascending: true }),
+      ensureProfilesCached(userIds),
+      ensurePerfumesInCatalog(perfumeIds)
     ]);
-    (profRes.data || []).forEach(p => profilesCache.set(p.user_id, p));
-    const commUserIds = [...new Set((commRes.data || []).map(c => c.user_id).filter(u => !profilesCache.has(u)))];
-    if (commUserIds.length) {
-      const { data: cp } = await sbClient.from('profiles').select('*').in('user_id', commUserIds);
-      (cp || []).forEach(p => profilesCache.set(p.user_id, p));
-    }
+
+    const commUserIds = [...new Set((commRes.data || []).map(c => c.user_id))];
+    if (commUserIds.length) await ensureProfilesCached(commUserIds);
 
     const likesByPost = {};
     (likeRes.data || []).forEach(l => {
@@ -4428,14 +4632,46 @@ async function loadSocialFeed() {
       commsByPost[c.activity_id].push({ ...c, username: cp?.username || 'member' });
     });
 
-    const enriched = posts.map(p => {
+    const enriched = selectedPosts.map(p => {
       const lk = likesByPost[p.id] || [];
       return { ...p, likes: lk.length, liked: lk.includes(currentUser.id), comments: commsByPost[p.id] || [] };
     });
 
-    list.innerHTML = enriched.map(renderFeedCard).join('');
+    feedPosts = append ? [...feedPosts, ...enriched] : enriched;
+    renderFeedList();
   } catch (e) {
+    if (statusBar) statusBar.classList.add('hidden');
+    if (moreWrap) moreWrap.classList.add('hidden');
     list.innerHTML = `<div class="bg-[#FDF7EB] border border-[#EDD8B1] rounded-2xl p-5 text-xs text-[#8C5E14]">Social tables aren't enabled in Supabase yet. Run <strong>supabase_migration_v3.sql</strong> in your Supabase SQL Editor to activate live feeds, follows, likes, and comments.</div>`;
+  } finally {
+    feedLoading = false;
+  }
+}
+
+function renderFeedList() {
+  const list = document.getElementById('social-feed-list');
+  const statusBar = document.getElementById('feed-status-bar');
+  const moreWrap = document.getElementById('social-feed-more');
+
+  if (statusBar && sbClient && currentUser && feedPosts.length) {
+    statusBar.classList.remove('hidden');
+    statusBar.textContent = feedScope === 'global'
+      ? `Showing ${feedPosts.length} sampled posts across the community · Tap "Fresh Picks" for a new mix`
+      : `Showing ${feedPosts.length} recent post${feedPosts.length === 1 ? '' : 's'} from you & people you follow`;
+  }
+
+  list.innerHTML = feedPosts.map(renderFeedCard).join('');
+
+  if (moreWrap) {
+    if (feedScope === 'following' && feedHasMore) {
+      moreWrap.classList.remove('hidden');
+      moreWrap.innerHTML = `<button onclick="loadSocialFeed(true)" class="px-5 py-2 rounded-full text-xs font-semibold bg-white border border-[#D8D3C8] text-[#1C1B18] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition shadow-xs">Load ${FEED_PAGE_SIZE} More Posts</button>`;
+    } else if (feedScope === 'global' && feedPosts.length >= FEED_PAGE_SIZE) {
+      moreWrap.classList.remove('hidden');
+      moreWrap.innerHTML = `<button onclick="loadSocialFeed(false)" class="px-5 py-2 rounded-full text-xs font-semibold bg-white border border-[#D8D3C8] text-[#1C1B18] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition shadow-xs">↻ Shuffle Fresh Community Picks</button>`;
+    } else {
+      moreWrap.classList.add('hidden');
+    }
   }
 }
 
@@ -4448,14 +4684,19 @@ function renderFeedCard(post) {
       ? 'logged Scent of the Day 🧴'
       : `added to ${COL_MAP[post.collection]?.label || 'collection'}`;
 
+  const pidStr = String(post.perfume_id);
+  const cachedRow = catalogById.get(pidStr);
+  const pName = post.perfume_name || (cachedRow ? fVal(cachedRow, 'name') : `Fragrance #${pidStr}`);
+  const pBrand = post.perfume_brand || (cachedRow ? fVal(cachedRow, 'brand') : '');
+
   return `
     <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 space-y-3">
       <div class="flex items-start justify-between gap-3">
         <div class="flex items-center gap-2.5 min-w-0">
-          <button onclick="openFriendProfile('${post.user_id}')" class="w-10 h-10 rounded-xl text-white font-serif-display font-bold flex items-center justify-center shrink-0" style="background:${prof.avatar_color || '#0F5C5C'}">${escapeHtml(initial)}</button>
+          <button onclick="openFriendProfile('${escapeHtml(post.user_id)}')" class="w-10 h-10 rounded-xl text-white font-serif-display font-bold flex items-center justify-center shrink-0" style="background:${prof.avatar_color || '#0F5C5C'}">${escapeHtml(initial)}</button>
           <div class="min-w-0">
             <div class="text-xs sm:text-sm">
-              <button onclick="openFriendProfile('${post.user_id}')" class="font-bold text-[#1C1B18] hover:text-[#0F5C5C]">@${escapeHtml(prof.username)}</button>
+              <button onclick="openFriendProfile('${escapeHtml(post.user_id)}')" class="font-bold text-[#1C1B18] hover:text-[#0F5C5C]">@${escapeHtml(prof.username)}</button>
               <span class="text-[#6E6A61]"> ${actionLabel}</span>
             </div>
             <div class="text-[11px] text-[#8A857B]">${timeAgo(post.created_at)}</div>
@@ -4464,10 +4705,10 @@ function renderFeedCard(post) {
         ${post.score !== null && post.score !== undefined ? `<div class="beli-badge beli-badge-sm ${getScoreClass(post.score)}">${formatScore(post.score)}</div>` : ''}
       </div>
 
-      <button onclick="openDetailModal('${post.perfume_id}')" class="w-full text-left p-3 rounded-xl bg-[#FAF9F6] border border-[#EFECE6] hover:border-[#0F5C5C] transition flex items-center justify-between gap-2">
+      <button type="button" onclick="openDetailModal('${escapeHtml(pidStr)}')" class="w-full text-left p-3 rounded-xl bg-[#FAF9F6] border border-[#EFECE6] hover:border-[#0F5C5C] transition flex items-center justify-between gap-2">
         <div class="min-w-0">
-          <div class="font-bold text-sm text-[#1C1B18] truncate">${escapeHtml(post.perfume_name || 'Fragrance #' + post.perfume_id)}</div>
-          <div class="text-xs text-[#6E6A61] truncate">${escapeHtml(post.perfume_brand || '')}</div>
+          <div class="font-bold text-sm text-[#1C1B18] truncate">${escapeHtml(pName)}</div>
+          <div class="text-xs text-[#6E6A61] truncate">${escapeHtml(pBrand)}</div>
         </div>
         <span class="text-xs font-semibold text-[#0F5C5C] shrink-0">View →</span>
       </button>
@@ -4475,7 +4716,7 @@ function renderFeedCard(post) {
       ${post.note ? `<p class="text-xs sm:text-sm text-[#3F3C36] italic px-1">“${escapeHtml(post.note)}”</p>` : ''}
 
       <div class="flex items-center gap-4 pt-1 border-t border-[#F0EDE6] text-xs">
-        <button onclick="toggleLikePost(${post.id}, ${post.liked ? 'true' : 'false'})" class="flex items-center gap-1 font-semibold ${post.liked ? 'text-[#C25447]' : 'text-[#6E6A61] hover:text-[#C25447]'}">
+        <button type="button" onclick="toggleLikePost(${post.id}, ${post.liked ? 'true' : 'false'})" class="flex items-center gap-1 font-semibold ${post.liked ? 'text-[#C25447]' : 'text-[#6E6A61] hover:text-[#C25447]'}">
           <span>${post.liked ? '❤️' : '🤍'}</span><span>${post.likes}</span>
         </button>
         <span class="text-[#6E6A61] font-semibold">💬 ${post.comments.length}</span>
@@ -4496,12 +4737,19 @@ function renderFeedCard(post) {
 
 async function toggleLikePost(postId, currentlyLiked) {
   if (postId < 0 || !sbClient || !currentUser) { showToast('Sign in to like posts'); return; }
-  if (currentlyLiked) {
-    await sbClient.from('activity_likes').delete().eq('activity_id', postId).eq('user_id', currentUser.id);
-  } else {
-    await sbClient.from('activity_likes').insert({ activity_id: postId, user_id: currentUser.id });
+  const post = feedPosts.find(p => p.id === postId);
+  try {
+    if (currentlyLiked) {
+      await sbClient.from('activity_likes').delete().eq('activity_id', postId).eq('user_id', currentUser.id);
+      if (post) { post.liked = false; post.likes = Math.max(0, post.likes - 1); }
+    } else {
+      await sbClient.from('activity_likes').insert({ activity_id: postId, user_id: currentUser.id });
+      if (post) { post.liked = true; post.likes += 1; }
+    }
+    renderFeedList();
+  } catch (e) {
+    showToast('Could not update like');
   }
-  loadSocialFeed();
 }
 
 async function submitComment(e, postId) {
@@ -4510,12 +4758,25 @@ async function submitComment(e, postId) {
   const inp = document.getElementById(`cmt-in-${postId}`);
   const body = inp.value.trim();
   if (!body) return;
-  await sbClient.from('activity_comments').insert({ activity_id: postId, user_id: currentUser.id, body });
-  inp.value = '';
-  loadSocialFeed();
+  try {
+    await sbClient.from('activity_comments').insert({ activity_id: postId, user_id: currentUser.id, body });
+    const post = feedPosts.find(p => p.id === postId);
+    if (post) {
+      post.comments.push({
+        activity_id: postId,
+        user_id: currentUser.id,
+        body,
+        username: myProfile?.username || currentUser.email.split('@')[0]
+      });
+    }
+    inp.value = '';
+    renderFeedList();
+  } catch (err) {
+    showToast('Could not post comment');
+  }
 }
 
-// ==================== FRIENDS & PEOPLE SEARCH ====================
+// ==================== FRIENDS & PEOPLE SEARCH + CLICKABLE FOLLOWS MODAL ====================
 function searchPeopleDebounced() {
   clearTimeout(peopleSearchTimer);
   peopleSearchTimer = setTimeout(renderFriendsTab, 180);
@@ -4525,14 +4786,12 @@ async function renderFriendsTab() {
   const q = (document.getElementById('friend-search-input')?.value || '').trim().toLowerCase();
   const resEl = document.getElementById('people-search-results');
 
+  updateFollowCountsUI();
+
   if (!sbClient || !currentUser) {
     DEMO_PROFILES.forEach(p => profilesCache.set(p.user_id, p));
     const hits = DEMO_PROFILES.filter(p => !q || p.username.includes(q) || p.display_name.toLowerCase().includes(q));
-    resEl.innerHTML = hits.map(renderPersonCard).join('');
-    document.getElementById('cnt-following').textContent = '0';
-    document.getElementById('cnt-followers').textContent = '0';
-    document.getElementById('following-list').innerHTML = `<p class="text-xs text-[#8A857B]">Sign in to follow friends.</p>`;
-    document.getElementById('followers-list').innerHTML = `<p class="text-xs text-[#8A857B]">Sign in to see followers.</p>`;
+    resEl.innerHTML = hits.map(p => renderPersonCard(p)).join('');
     return;
   }
 
@@ -4542,107 +4801,274 @@ async function renderFriendsTab() {
     const { data: people } = await query;
     (people || []).forEach(p => profilesCache.set(p.user_id, p));
     resEl.innerHTML = (people && people.length)
-      ? people.map(renderPersonCard).join('')
+      ? people.map(p => renderPersonCard(p)).join('')
       : `<p class="text-xs text-[#8A857B] sm:col-span-2">No public members found matching "${escapeHtml(q)}".</p>`;
-
-    // Load following & followers profile cards
-    const allRel = [...new Set([...myFollowingIds, ...myFollowerIds])];
-    if (allRel.length) {
-      const { data: relProfs } = await sbClient.from('profiles').select('*').in('user_id', allRel);
-      (relProfs || []).forEach(p => profilesCache.set(p.user_id, p));
-    }
-    document.getElementById('cnt-following').textContent = myFollowingIds.size;
-    document.getElementById('cnt-followers').textContent = myFollowerIds.size;
-
-    const fingList = [...myFollowingIds].map(id => profilesCache.get(id)).filter(Boolean);
-    const fersList = [...myFollowerIds].map(id => profilesCache.get(id)).filter(Boolean);
-    document.getElementById('following-list').innerHTML = fingList.length ? fingList.map(renderPersonCard).join('') : `<p class="text-xs text-[#8A857B]">Not following anyone yet.</p>`;
-    document.getElementById('followers-list').innerHTML = fersList.length ? fersList.map(renderPersonCard).join('') : `<p class="text-xs text-[#8A857B]">No followers yet — share your @username!</p>`;
   } catch (e) {
     resEl.innerHTML = `<p class="text-xs text-[#8C5E14]">Run <strong>supabase_migration_v3.sql</strong> to enable people search &amp; following.</p>`;
   }
 }
 
-function renderPersonCard(p) {
+function renderPersonCard(p, fromFollowsModal = false) {
+  const isSelf = currentUser && p.user_id === currentUser.id;
   const isFollowing = myFollowingIds.has(p.user_id);
   const initial = (p.display_name || p.username || 'U')[0].toUpperCase();
+  const clickAction = fromFollowsModal
+    ? `closeFollowsModal(); openFriendProfile('${escapeHtml(p.user_id)}')`
+    : `openFriendProfile('${escapeHtml(p.user_id)}')`;
+
   return `
     <div class="rounded-2xl border border-[#E8E4DC] bg-[#FAF9F6] p-3 flex items-center justify-between gap-2.5">
-      <button onclick="openFriendProfile('${p.user_id}')" class="flex items-center gap-2.5 min-w-0 text-left flex-1">
+      <button type="button" onclick="${clickAction}" class="flex items-center gap-2.5 min-w-0 text-left flex-1">
         <div class="w-9 h-9 rounded-xl text-white font-serif-display font-bold flex items-center justify-center shrink-0" style="background:${p.avatar_color || '#0F5C5C'}">${escapeHtml(initial)}</div>
         <div class="min-w-0">
-          <div class="text-xs font-bold text-[#1C1B18] truncate">${escapeHtml(p.display_name || p.username)}</div>
+          <div class="text-xs font-bold text-[#1C1B18] truncate">${escapeHtml(p.display_name || p.username)}${isSelf ? ' <span class="text-[10px] font-semibold text-[#0F5C5C]">(You)</span>' : ''}</div>
           <div class="text-[11px] text-[#6E6A61] truncate">@${escapeHtml(p.username)}</div>
         </div>
       </button>
-      <button onclick="toggleFollow('${p.user_id}')" class="px-3 py-1.5 rounded-full text-[11px] font-bold transition shrink-0 ${isFollowing ? 'bg-white border border-[#D8D3C8] text-[#3F3C36] hover:border-[#C25447] hover:text-[#C25447]' : 'bg-[#0F5C5C] text-white hover:bg-[#0B4747]'}">
+      ${isSelf ? '' : `
+      <button type="button" onclick="toggleFollow('${escapeHtml(p.user_id)}')" class="px-3 py-1.5 rounded-full text-[11px] font-bold transition shrink-0 ${isFollowing ? 'bg-white border border-[#D8D3C8] text-[#3F3C36] hover:border-[#C25447] hover:text-[#C25447]' : 'bg-[#0F5C5C] text-white hover:bg-[#0B4747]'}">
         ${isFollowing ? 'Following' : '+ Follow'}
-      </button>
+      </button>`}
     </div>`;
 }
 
+async function openFollowsModal(userId, initialTab = 'following') {
+  const modal = document.getElementById('follows-modal');
+  const listEl = document.getElementById('flm-list');
+  const searchEl = document.getElementById('flm-search');
+  if (searchEl) searchEl.value = '';
+
+  const isMe = !userId || userId === 'me' || (currentUser && userId === currentUser.id);
+  const targetProf = isMe ? myProfile : profilesCache.get(userId);
+  const title = isMe
+    ? (myProfile?.username ? `@${myProfile.username}` : 'Your Connections')
+    : (targetProf?.username ? `@${targetProf.username}` : 'Connections');
+
+  followsModalState = {
+    userId: isMe ? (currentUser?.id || 'me') : userId,
+    tab: initialTab,
+    followingIds: [],
+    followerIds: [],
+    title
+  };
+
+  document.getElementById('flm-kicker').textContent = isMe ? 'Your Connections' : 'Member Connections';
+  document.getElementById('flm-title').textContent = title;
+  listEl.innerHTML = `<div class="py-10 text-center text-xs text-[#6E6A61]">Loading connections…</div>`;
+  modal.classList.remove('hidden');
+
+  if (!sbClient || !currentUser || String(userId).startsWith('demo_')) {
+    DEMO_PROFILES.forEach(p => profilesCache.set(p.user_id, p));
+    followsModalState.followingIds = [];
+    followsModalState.followerIds = [];
+    updateFollowsModalTabs();
+    listEl.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 text-center text-xs text-[#6E6A61]">Sign in to view live Following &amp; Followers lists.</div>`;
+    return;
+  }
+
+  try {
+    if (isMe) {
+      followsModalState.followingIds = [...myFollowingIds];
+      followsModalState.followerIds = [...myFollowerIds];
+    } else {
+      const [f1, f2] = await Promise.all([
+        sbClient.from('follows').select('following_id').eq('follower_id', userId),
+        sbClient.from('follows').select('follower_id').eq('following_id', userId)
+      ]);
+      followsModalState.followingIds = (f1.data || []).map(r => r.following_id);
+      followsModalState.followerIds = (f2.data || []).map(r => r.follower_id);
+    }
+
+    updateFollowsModalTabs();
+    const allIds = [...new Set([...followsModalState.followingIds, ...followsModalState.followerIds])];
+    await ensureProfilesCached(allIds);
+    renderFollowsModalList();
+  } catch (e) {
+    listEl.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-5 text-center text-xs text-[#8A857B]">Could not load connections.</div>`;
+  }
+}
+
+function closeFollowsModal() {
+  document.getElementById('follows-modal').classList.add('hidden');
+}
+
+function updateFollowsModalTabs() {
+  const fBtn = document.getElementById('flm-tab-following');
+  const rBtn = document.getElementById('flm-tab-followers');
+  fBtn.textContent = `Following (${followsModalState.followingIds.length})`;
+  rBtn.textContent = `Followers (${followsModalState.followerIds.length})`;
+  fBtn.className = followsModalState.tab === 'following'
+    ? 'py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs'
+    : 'py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
+  rBtn.className = followsModalState.tab === 'followers'
+    ? 'py-1.5 rounded-full text-xs font-bold transition bg-white text-[#0F5C5C] shadow-xs'
+    : 'py-1.5 rounded-full text-xs font-bold transition text-[#6E6A61]';
+}
+
+function switchFollowsModalTab(tab) {
+  followsModalState.tab = tab;
+  updateFollowsModalTabs();
+  renderFollowsModalList();
+}
+
+function renderFollowsModalList() {
+  const listEl = document.getElementById('flm-list');
+  const q = (document.getElementById('flm-search')?.value || '').trim().toLowerCase();
+  const ids = followsModalState.tab === 'following' ? followsModalState.followingIds : followsModalState.followerIds;
+
+  const people = ids
+    .map(id => profilesCache.get(id) || { user_id: id, username: 'member', display_name: 'Member', avatar_color: '#0F5C5C' })
+    .filter(p => !q || (p.username || '').toLowerCase().includes(q) || (p.display_name || '').toLowerCase().includes(q));
+
+  if (!ids.length) {
+    listEl.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-center text-xs text-[#8A857B]">${followsModalState.tab === 'following' ? 'Not following anyone yet.' : 'No followers yet.'}</div>`;
+    return;
+  }
+  if (!people.length) {
+    listEl.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-center text-xs text-[#8A857B]">No matches for "${escapeHtml(q)}".</div>`;
+    return;
+  }
+  listEl.innerHTML = people.map(p => renderPersonCard(p, true)).join('');
+}
+
 async function toggleFollow(targetUserId) {
-  if (!sbClient || !currentUser || targetUserId.startsWith('demo_')) {
+  if (!sbClient || !currentUser || String(targetUserId).startsWith('demo_')) {
     showToast('Sign in to follow friends');
     return;
   }
-  if (myFollowingIds.has(targetUserId)) {
-    await sbClient.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetUserId);
-    myFollowingIds.delete(targetUserId);
-    showToast('Unfollowed');
-  } else {
-    await sbClient.from('follows').insert({ follower_id: currentUser.id, following_id: targetUserId });
-    myFollowingIds.add(targetUserId);
-    showToast('Following!');
+  try {
+    if (myFollowingIds.has(targetUserId)) {
+      await sbClient.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetUserId);
+      myFollowingIds.delete(targetUserId);
+      showToast('Unfollowed');
+    } else {
+      await sbClient.from('follows').insert({ follower_id: currentUser.id, following_id: targetUserId });
+      myFollowingIds.add(targetUserId);
+      showToast('Following!');
+    }
+    updateFollowCountsUI();
+
+    if (currentView === 'social' && activeSocialTab === 'friends') renderFriendsTab();
+    if (currentView === 'social' && activeSocialTab === 'profile') renderMyProfileTab();
+
+    // Update follows modal live if open
+    if (!document.getElementById('follows-modal').classList.contains('hidden')) {
+      if (followsModalState.userId === currentUser.id) {
+        followsModalState.followingIds = [...myFollowingIds];
+        updateFollowsModalTabs();
+      }
+      renderFollowsModalList();
+    }
+
+    // Update friend profile modal button/count live if viewing that person
+    if (friendViewState.userId === targetUserId && !document.getElementById('friend-modal').classList.contains('hidden')) {
+      updateFriendModalFollowButton(targetUserId);
+    }
+  } catch (e) {
+    showToast('Could not update follow status');
   }
-  if (currentView === 'social' && activeSocialTab === 'friends') renderFriendsTab();
-  if (!document.getElementById('friend-modal').classList.contains('hidden')) openFriendProfile(targetUserId);
 }
 
-// ==================== FRIEND PROFILE MODAL + TASTE COMPATIBILITY % ====================
-async function openFriendProfile(userId) {
-  const prof = profilesCache.get(userId) || { user_id: userId, username: 'member', display_name: 'Member', bio: '', avatar_color: '#0F5C5C' };
-  document.getElementById('fm-avatar').textContent = (prof.display_name || prof.username || 'M')[0].toUpperCase();
-  document.getElementById('fm-avatar').style.background = prof.avatar_color || '#0F5C5C';
-  document.getElementById('fm-name').textContent = prof.display_name || prof.username;
-  document.getElementById('fm-handle').textContent = `@${prof.username}${prof.bio ? ' · ' + prof.bio : ''}`;
+// ==================== FULL FRIEND PROFILE MODAL (ALL RANKED + ALL COLLECTIONS + FULL FILTERS) ====================
+function closeFriendModal() {
+  document.getElementById('friend-modal').classList.add('hidden');
+}
 
+function updateFriendModalFollowButton(userId) {
   const fBtn = document.getElementById('fm-follow-btn');
+  if (!fBtn) return;
   if (currentUser && userId === currentUser.id) {
     fBtn.classList.add('hidden');
   } else {
     fBtn.classList.remove('hidden');
     const isF = myFollowingIds.has(userId);
     fBtn.className = isF
-      ? 'px-4 py-1.5 rounded-full text-xs font-bold border border-[#D8D3C8] bg-white text-[#3F3C36]'
-      : 'px-4 py-1.5 rounded-full text-xs font-bold bg-[#0F5C5C] text-white';
+      ? 'px-4 py-1.5 rounded-full text-xs font-bold border border-[#D8D3C8] bg-white text-[#3F3C36] hover:border-[#C25447] hover:text-[#C25447] transition'
+      : 'px-4 py-1.5 rounded-full text-xs font-bold bg-[#0F5C5C] text-white hover:bg-[#0B4747] transition';
     fBtn.textContent = isF ? 'Following' : '+ Follow';
     fBtn.onclick = () => toggleFollow(userId);
   }
+}
+
+function buildDemoFriendLibrary(userId) {
+  const offset = userId === 'demo_maya' ? 0 : 12;
+  const rows = catalogRows.slice(offset, offset + 12);
+  const fItems = {};
+  const fTiers = { love: [], like: [], dislike: [] };
+  const cols = ['have', 'have', 'have', 'have', 'had', 'want', 'tried', 'have', 'have', 'want', 'tried', 'had'];
+  rows.forEach((r, idx) => {
+    const id = fVal(r, 'id');
+    const col = cols[idx % cols.length];
+    const tier = idx < 5 ? 'love' : (idx < 8 ? 'like' : (idx === 8 ? 'dislike' : null));
+    fItems[id] = { collection: col, addedAt: Date.now() - idx * 86400000, note: idx === 0 ? 'Absolute signature scent.' : '', tier };
+    if (tier) fTiers[tier].push({ id, tiedWithPrev: false });
+  });
+  return { items: fItems, tiers: fTiers };
+}
+
+async function openFriendProfile(userId) {
+  let prof = profilesCache.get(userId);
+  if (!prof && sbClient && !String(userId).startsWith('demo_')) {
+    await ensureProfilesCached([userId]);
+    prof = profilesCache.get(userId);
+  }
+  prof = prof || { user_id: userId, username: 'member', display_name: 'Member', bio: '', avatar_color: '#0F5C5C' };
+
+  document.getElementById('fm-avatar').textContent = (prof.display_name || prof.username || 'M')[0].toUpperCase();
+  document.getElementById('fm-avatar').style.background = prof.avatar_color || '#0F5C5C';
+  document.getElementById('fm-name').textContent = prof.display_name || prof.username;
+  document.getElementById('fm-handle').textContent = `@${prof.username}${prof.bio ? ' · ' + prof.bio : ''}`;
+  updateFriendModalFollowButton(userId);
 
   const body = document.getElementById('fm-body');
-  body.innerHTML = `<div class="py-8 text-center text-sm text-[#6E6A61]">Loading shelf &amp; taste compatibility…</div>`;
+  body.innerHTML = `
+    <div class="py-12 flex flex-col items-center justify-center text-center gap-3">
+      <div class="w-9 h-9 rounded-full border-4 border-[#E4E0D7] border-t-[#0F5C5C] animate-spin"></div>
+      <p class="text-xs text-[#6E6A61]">Loading full collection, rankings &amp; taste compatibility…</p>
+    </div>`;
   document.getElementById('friend-modal').classList.remove('hidden');
 
-  if (!sbClient || userId.startsWith('demo_')) {
-    body.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-center text-xs text-[#6E6A61]">Sign in to your live Supabase site to view friends' full shelves, rankings, and Taste Compatibility %.</div>`;
-    return;
-  }
-
   try {
-    const { data: lib } = await sbClient.from('user_library').select('items, tiers').eq('user_id', userId).maybeSingle();
-    const fItems = lib?.items || {};
-    const fTiers = lib?.tiers || { love: [], like: [], dislike: [] };
-    const fScoreMap = computeScoresFromTiers(fTiers);
+    let fItems = {};
+    let fTiers = { love: [], like: [], dislike: [] };
+    let followingCount = 0;
+    let followerCount = 0;
 
-    // Ensure all referenced perfumes are in catalogById
-    const missing = Object.keys(fItems).filter(id => !catalogById.has(String(id)));
-    if (missing.length) {
-      const { data: pRows } = await sbClient.from('perfumes').select('*').in('id', missing.map(x => parseInt(x, 10)).filter(Boolean));
-      (pRows || []).forEach(p => catalogById.set(String(p.id), objToRowArray(p)));
+    if (!sbClient || String(userId).startsWith('demo_')) {
+      const demo = buildDemoFriendLibrary(userId);
+      fItems = demo.items;
+      fTiers = demo.tiers;
+      followingCount = 1;
+      followerCount = 2;
+    } else {
+      const [libRes, fingRes, fersRes] = await Promise.all([
+        sbClient.from('user_library').select('items, tiers').eq('user_id', userId).maybeSingle(),
+        sbClient.from('follows').select('following_id', { count: 'exact', head: true }).eq('follower_id', userId),
+        sbClient.from('follows').select('follower_id', { count: 'exact', head: true }).eq('following_id', userId)
+      ]);
+      const lib = libRes.data;
+      fItems = lib?.items || {};
+      fTiers = {
+        love: Array.isArray(lib?.tiers?.love) ? lib.tiers.love : [],
+        like: Array.isArray(lib?.tiers?.like) ? lib.tiers.like : [],
+        dislike: Array.isArray(lib?.tiers?.dislike) ? lib.tiers.dislike : []
+      };
+      followingCount = fingRes.count || 0;
+      followerCount = fersRes.count || 0;
     }
 
-    // Compute Taste Compatibility % (shared ranked fragrances + top accord overlap)
+    const fScoreMap = computeScoresFromTiers(fTiers);
+
+    // Hydrate ALL perfume IDs across both their collections AND ranked tiers
+    const allFriendIds = [
+      ...Object.keys(fItems),
+      ...fTiers.love.map(e => String(e.id)),
+      ...fTiers.like.map(e => String(e.id)),
+      ...fTiers.dislike.map(e => String(e.id))
+    ];
+    await ensurePerfumesInCatalog(allFriendIds);
+
+    // Compute Taste Compatibility %
     const sharedIds = [...fScoreMap.keys()].filter(id => scoreMap.has(id));
     let compatPct = null;
     if (sharedIds.length >= 1) {
@@ -4650,7 +5076,6 @@ async function openFriendProfile(userId) {
       const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
       compatPct = Math.max(15, Math.min(99, Math.round(100 - avgDiff * 12)));
     } else if (fScoreMap.size > 0 && scoreMap.size > 0) {
-      // Fallback: accord cosine between top loved fragrances
       const topA = [...scoreMap.entries()].filter(([,s]) => s.score >= 7).slice(0, 5).map(([id]) => catalogById.get(id)).filter(Boolean);
       const topB = [...fScoreMap.entries()].filter(([,s]) => s.score >= 7).slice(0, 5).map(([id]) => catalogById.get(id)).filter(Boolean);
       if (topA.length && topB.length) {
@@ -4661,48 +5086,349 @@ async function openFriendProfile(userId) {
       }
     }
 
-    const topRanked = [...fScoreMap.entries()].sort((a, b) => a[1].rank - b[1].rank).slice(0, 15);
-    const haveCount = Object.values(fItems).filter(x => x.collection === 'have').length;
+    friendLibCache.set(userId, { items: fItems, tiers: fTiers, scoreMap: fScoreMap });
+    friendViewState = {
+      userId,
+      profile: prof,
+      items: fItems,
+      tiers: fTiers,
+      scoreMap: fScoreMap,
+      tab: fScoreMap.size > 0 ? 'ranked' : 'have',
+      limit: FRIEND_SHELF_PAGE_SIZE,
+      followingCount,
+      followerCount,
+      compatPct
+    };
 
-    body.innerHTML = `
-      <div class="grid grid-cols-3 gap-3 text-center">
-        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3">
-          <div class="text-[10px] font-bold uppercase text-[#6E6A61]">Ranked</div>
-          <div class="font-serif-display text-2xl font-bold text-[#0F5C5C]">${fScoreMap.size}</div>
+    renderFriendModalShell();
+    renderFriendShelfList();
+  } catch (e) {
+    console.warn('Friend profile load error:', e);
+    body.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-center text-xs text-[#8A857B]">Could not load this member's collection. Their profile may be private.</div>`;
+  }
+}
+
+function renderFriendModalShell() {
+  const { userId, items, scoreMap: fScoreMap, followingCount, followerCount, compatPct } = friendViewState;
+  const counts = { have: 0, had: 0, want: 0, tried: 0 };
+  for (const it of Object.values(items)) {
+    if (counts[it.collection] !== undefined) counts[it.collection]++;
+  }
+  const allSavedCount = new Set([...Object.keys(items), ...fScoreMap.keys()]).size;
+
+  const body = document.getElementById('fm-body');
+  body.innerHTML = `
+    <!-- Connections & Summary Stats -->
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" onclick="openFollowsModal('${escapeHtml(userId)}', 'following')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#3F3C36] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition">
+          <strong class="text-[#1C1B18]">${followingCount}</strong> Following
+        </button>
+        <button type="button" onclick="openFollowsModal('${escapeHtml(userId)}', 'followers')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-[#E4E0D7] text-[#3F3C36] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition">
+          <strong class="text-[#1C1B18]">${followerCount}</strong> Followers
+        </button>
+      </div>
+      ${compatPct !== null ? `<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-[#FDF7EB] border border-[#EDD8B1] text-[#9A6B19]">✨ ${compatPct}% Taste Match</span>` : ''}
+    </div>
+
+    <!-- Clickable Collection Stats Strip -->
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
+      <button type="button" onclick="setFriendShelfTab('ranked')" class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5 hover:border-[#0F5C5C] transition">
+        <div class="text-[10px] font-bold uppercase text-[#0F5C5C]">Ranked</div>
+        <div class="font-serif-display text-xl font-bold text-[#0F5C5C]">${fScoreMap.size}</div>
+      </button>
+      <button type="button" onclick="setFriendShelfTab('have')" class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5 hover:border-[#0F5C5C] transition">
+        <div class="text-[10px] font-bold uppercase text-[#136F63]">I have</div>
+        <div class="font-serif-display text-xl font-bold text-[#1C1B18]">${counts.have}</div>
+      </button>
+      <button type="button" onclick="setFriendShelfTab('had')" class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5 hover:border-[#0F5C5C] transition">
+        <div class="text-[10px] font-bold uppercase text-[#7C5C38]">I had</div>
+        <div class="font-serif-display text-xl font-bold text-[#1C1B18]">${counts.had}</div>
+      </button>
+      <button type="button" onclick="setFriendShelfTab('want')" class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5 hover:border-[#0F5C5C] transition">
+        <div class="text-[10px] font-bold uppercase text-[#B2761D]">I want</div>
+        <div class="font-serif-display text-xl font-bold text-[#1C1B18]">${counts.want}</div>
+      </button>
+      <button type="button" onclick="setFriendShelfTab('tried')" class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5 hover:border-[#0F5C5C] transition">
+        <div class="text-[10px] font-bold uppercase text-[#4C5C8A]">I've tried</div>
+        <div class="font-serif-display text-xl font-bold text-[#1C1B18]">${counts.tried}</div>
+      </button>
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-2.5">
+        <div class="text-[10px] font-bold uppercase text-[#6E6A61]">Taste Match</div>
+        <div class="font-serif-display text-xl font-bold text-[#C48B2C]">${compatPct !== null ? compatPct + '%' : '—'}</div>
+      </div>
+    </div>
+
+    <!-- Shelf Tabs & Full Filter Bar -->
+    <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" data-ftab="ranked" onclick="setFriendShelfTab('ranked')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">All Ranked (${fScoreMap.size})</button>
+          <button type="button" data-ftab="have" onclick="setFriendShelfTab('have')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I have (${counts.have})</button>
+          <button type="button" data-ftab="had" onclick="setFriendShelfTab('had')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I had (${counts.had})</button>
+          <button type="button" data-ftab="want" onclick="setFriendShelfTab('want')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I want (${counts.want})</button>
+          <button type="button" data-ftab="tried" onclick="setFriendShelfTab('tried')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">I've tried (${counts.tried})</button>
+          <button type="button" data-ftab="all" onclick="setFriendShelfTab('all')" class="ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition">All Saved (${allSavedCount})</button>
         </div>
-        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3">
-          <div class="text-[10px] font-bold uppercase text-[#6E6A61]">I Have</div>
-          <div class="font-serif-display text-2xl font-bold text-[#1C1B18]">${haveCount}</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3">
-          <div class="text-[10px] font-bold uppercase text-[#6E6A61]">Taste Match</div>
-          <div class="font-serif-display text-2xl font-bold text-[#C48B2C]">${compatPct !== null ? compatPct + '%' : '—'}</div>
-        </div>
+        <button id="ff-adv-toggle" type="button" onclick="toggleFilterPanel('ff')" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition">Filters ▾</button>
       </div>
 
-      <div class="space-y-2">
-        <div class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Top Ranked Fragrances</div>
-        ${topRanked.length ? topRanked.map(([pid, sc]) => {
-          const r = catalogById.get(pid);
-          const fit = fItems[pid];
-          return `
-            <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3 flex items-center justify-between gap-3">
-              <button onclick="document.getElementById('friend-modal').classList.add('hidden'); openDetailModal('${pid}')" class="flex items-center gap-2.5 min-w-0 text-left flex-1">
-                <span class="font-serif-display font-bold text-sm text-[#6E6A61] w-7">#${sc.rank}</span>
-                <div class="min-w-0">
-                  <div class="text-sm font-bold text-[#1C1B18] truncate">${r ? escapeHtml(fVal(r,'name')) : '#' + pid}</div>
-                  <div class="text-[11px] text-[#6E6A61] truncate">${r ? escapeHtml(fVal(r,'brand')) : ''}${fit?.collection && COL_MAP[fit.collection] ? ' · ' + COL_MAP[fit.collection].label : ''}</div>
-                </div>
-              </button>
-              <div class="flex items-center gap-2 shrink-0">
-                <button onclick="addToCollectionUnrated('${pid}', 'want')" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1]">+ Want</button>
-                <span class="beli-badge beli-badge-sm ${getScoreClass(sc.score)}">${formatScore(sc.score)}</span>
-              </div>
-            </div>`;
-        }).join('') : `<p class="text-xs text-[#8A857B]">No ranked fragrances yet.</p>`}
+      <div class="flex flex-wrap items-center gap-2">
+        <input id="ff-search" type="text" oninput="resetFriendLimitAndRender()" placeholder="Search name, brand, note, accord, perfumer…" class="flex-1 min-w-[160px] px-3 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] focus:outline-none focus:border-[#0F5C5C] focus:bg-white" />
+        <select id="ff-tier" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="all">All Tiers</option>
+          <option value="love">Loved (7.5–10)</option>
+          <option value="like">Liked (4.5–7.4)</option>
+          <option value="dislike">Didn't Like (0–4.4)</option>
+        </select>
+        <select id="ff-col-sub" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="all">All Collections</option>
+          <option value="have">In: I have</option>
+          <option value="had">In: I had</option>
+          <option value="want">In: I want</option>
+          <option value="tried">In: I've tried</option>
+        </select>
+        <select id="ff-rated" onchange="resetFriendLimitAndRender()" class="hidden px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="all">Rated &amp; Unrated</option>
+          <option value="rated">Rated Only</option>
+          <option value="unrated">Unrated Only</option>
+        </select>
+        <select id="ff-sort" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6] font-medium focus:outline-none focus:border-[#0F5C5C]">
+          <option value="rank">Sort: Their Rank</option>
+          <option value="community">Sort: Community Rating</option>
+          <option value="longevity">Sort: Longevity</option>
+          <option value="sillage">Sort: Sillage</option>
+          <option value="year">Sort: Release Year</option>
+          <option value="name">Sort: Name A–Z</option>
+          <option value="recent">Sort: Recently Added</option>
+        </select>
+      </div>
+
+      <!-- Expandable Advanced Filters (Gender, Season, Day/Night, Rating, Longevity, Sillage, Price Value) -->
+      <div id="ff-adv-filters" class="hidden pt-2.5 border-t border-[#F0EDE6] flex flex-wrap items-center gap-2">
+        <select id="ff-gender" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Gender</option><option value="unisex">Unisex</option><option value="male">Male</option><option value="female">Female</option>
+        </select>
+        <select id="ff-season" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Season</option><option value="winter">Winter</option><option value="spring">Spring</option><option value="summer">Summer</option><option value="autumn">Autumn</option>
+        </select>
+        <select id="ff-occasion" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
+        </select>
+        <select id="ff-rating" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+        </select>
+        <select id="ff-longevity" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
+        </select>
+        <select id="ff-sillage" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Sillage</option><option value="intimate">Intimate (&lt;1.5)</option><option value="moderate">Moderate (1.5–2.5)</option><option value="strong">Strong+ (2.5+)</option><option value="enormous">Enormous (3.3+)</option>
+        </select>
+        <select id="ff-price" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
+          <option value="">Price Value</option><option value="3.5">Good Value (3.5+)</option><option value="4.2">Great Value (4.2+)</option>
+        </select>
+        <button type="button" onclick="resetFriendFilters()" class="ml-auto text-xs font-semibold text-[#C25447] hover:underline">Reset All</button>
+      </div>
+    </div>
+
+    <div id="fm-shelf-summary" class="text-xs text-[#6E6A61] flex items-center justify-between px-1"></div>
+    <div id="fm-shelf-list" class="space-y-2"></div>
+    <div id="fm-shelf-more" class="hidden text-center pt-1"></div>
+  `;
+}
+
+function setFriendShelfTab(tab) {
+  friendViewState.tab = tab;
+  friendViewState.limit = FRIEND_SHELF_PAGE_SIZE;
+  renderFriendShelfList();
+}
+
+function resetFriendLimitAndRender() {
+  friendViewState.limit = FRIEND_SHELF_PAGE_SIZE;
+  renderFriendShelfList();
+}
+
+function resetFriendFilters() {
+  const s = document.getElementById('ff-search');
+  if (s) s.value = '';
+  const t = document.getElementById('ff-tier');
+  if (t) t.value = 'all';
+  const cs = document.getElementById('ff-col-sub');
+  if (cs) cs.value = 'all';
+  const rd = document.getElementById('ff-rated');
+  if (rd) rd.value = 'all';
+  resetAdvancedFilters('ff', resetFriendLimitAndRender);
+}
+
+function loadMoreFriendShelf() {
+  friendViewState.limit += FRIEND_SHELF_PAGE_SIZE;
+  renderFriendShelfList();
+}
+
+function renderFriendShelfList() {
+  const { items, tiers, scoreMap: fScoreMap, tab } = friendViewState;
+
+  // Update tab pills
+  document.querySelectorAll('.ftab-btn').forEach(btn => {
+    const active = btn.dataset.ftab === tab;
+    btn.className = active
+      ? 'ftab-btn px-3 py-1.5 rounded-full text-xs font-bold transition bg-[#0F5C5C] text-white'
+      : 'ftab-btn px-3 py-1.5 rounded-full text-xs font-semibold transition bg-[#F4F1EB] text-[#5C5850] hover:bg-[#E9E4DA]';
+  });
+
+  // Toggle tab-specific dropdowns
+  const tierEl = document.getElementById('ff-tier');
+  const colSubEl = document.getElementById('ff-col-sub');
+  const ratedEl = document.getElementById('ff-rated');
+  if (tierEl) tierEl.classList.toggle('hidden', tab !== 'ranked');
+  if (colSubEl) colSubEl.classList.toggle('hidden', tab !== 'ranked');
+  if (ratedEl) ratedEl.classList.toggle('hidden', tab === 'ranked');
+
+  // Show active advanced filter count on toggle button
+  const advKeys = ['gender', 'season', 'occasion', 'rating', 'longevity', 'sillage', 'price'];
+  const activeAdvCount = advKeys.filter(k => (document.getElementById(`ff-${k}`)?.value || '') !== '').length;
+  const advToggle = document.getElementById('ff-adv-toggle');
+  if (advToggle) {
+    advToggle.textContent = activeAdvCount ? `Filters (${activeAdvCount}) ▾` : 'Filters ▾';
+    advToggle.className = activeAdvCount
+      ? 'px-3 py-1.5 rounded-full text-xs font-bold bg-[#E6F2F1] text-[#0F5C5C] border border-[#B9DDD9] transition'
+      : 'px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF9F6] text-[#3F3C36] border border-[#E4E0D7] hover:border-[#0F5C5C] transition';
+  }
+
+  // Build candidate entries for selected tab
+  let entries = [];
+  if (tab === 'ranked') {
+    entries = [
+      ...tiers.love.map(e => ({ id: String(e.id), tier: 'love' })),
+      ...tiers.like.map(e => ({ id: String(e.id), tier: 'like' })),
+      ...tiers.dislike.map(e => ({ id: String(e.id), tier: 'dislike' }))
+    ];
+  } else if (tab === 'all') {
+    const allIds = [...new Set([...Object.keys(items), ...fScoreMap.keys()])];
+    entries = allIds.map(id => ({ id: String(id), tier: fScoreMap.get(String(id))?.tier || null }));
+  } else {
+    entries = Object.entries(items)
+      .filter(([, it]) => it && it.collection === tab)
+      .map(([id]) => ({ id: String(id), tier: fScoreMap.get(String(id))?.tier || null }));
+  }
+
+  const q = (document.getElementById('ff-search')?.value || '').trim().toLowerCase();
+  const tierF = document.getElementById('ff-tier')?.value || 'all';
+  const colSubF = document.getElementById('ff-col-sub')?.value || 'all';
+  const ratedF = document.getElementById('ff-rated')?.value || 'all';
+  const sortF = document.getElementById('ff-sort')?.value || 'rank';
+
+  const filtered = entries.filter(({ id, tier }) => {
+    const it = items[id];
+    const row = catalogById.get(id);
+    const sc = fScoreMap.get(id);
+
+    if (tab === 'ranked') {
+      if (tierF !== 'all' && tier !== tierF) return false;
+      if (colSubF !== 'all' && (!it || it.collection !== colSubF)) return false;
+    } else {
+      if (ratedF === 'rated' && !sc) return false;
+      if (ratedF === 'unrated' && sc) return false;
+    }
+
+    if (activeAdvCount > 0) {
+      if (!row || !matchesAdvancedFilters(row, 'ff')) return false;
+    }
+
+    if (q) {
+      const hay = row
+        ? `${fVal(row, 'name')} ${fVal(row, 'brand')} ${fVal(row, 'accords')} ${fVal(row, 'notes_top')} ${fVal(row, 'notes_middle')} ${fVal(row, 'notes_base')} ${fVal(row, 'perfumers')} ${it?.note || ''}`.toLowerCase()
+        : `${id} ${it?.note || ''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    const rA = catalogById.get(a.id), rB = catalogById.get(b.id);
+    const sA = fScoreMap.get(a.id), sB = fScoreMap.get(b.id);
+    if (sortF === 'rank') {
+      if (sA && sB) return sA.rank - sB.rank;
+      if (sA) return -1;
+      if (sB) return 1;
+      return (rA ? fVal(rA, 'name') : a.id).localeCompare(rB ? fVal(rB, 'name') : b.id);
+    }
+    if (sortF === 'community') return (rB ? fNum(rB, 'rating_avg') : 0) - (rA ? fNum(rA, 'rating_avg') : 0);
+    if (sortF === 'longevity') return (rB ? fNum(rB, 'longevity_avg') : 0) - (rA ? fNum(rA, 'longevity_avg') : 0);
+    if (sortF === 'sillage') return (rB ? fNum(rB, 'sillage_avg') : 0) - (rA ? fNum(rA, 'sillage_avg') : 0);
+    if (sortF === 'year') return (rB ? fNum(rB, 'year') : 0) - (rA ? fNum(rA, 'year') : 0);
+    if (sortF === 'recent') return (items[b.id]?.addedAt || 0) - (items[a.id]?.addedAt || 0);
+    return (rA ? fVal(rA, 'name') : a.id).localeCompare(rB ? fVal(rB, 'name') : b.id);
+  });
+
+  const sumEl = document.getElementById('fm-shelf-summary');
+  const listEl = document.getElementById('fm-shelf-list');
+  const moreEl = document.getElementById('fm-shelf-more');
+
+  const tabTitle = tab === 'ranked' ? 'All Ranked' : (tab === 'all' ? 'All Saved' : (COL_MAP[tab]?.label || tab));
+  if (sumEl) {
+    sumEl.innerHTML = `<span><strong>${tabTitle}</strong> · Showing ${Math.min(filtered.length, friendViewState.limit)} of ${filtered.length} fragrance${filtered.length === 1 ? '' : 's'}${entries.length !== filtered.length ? ` (${entries.length} total)` : ''}</span>`;
+  }
+
+  if (!filtered.length) {
+    listEl.innerHTML = `<div class="bg-white rounded-2xl border border-[#E8E4DC] p-7 text-center text-xs text-[#8A857B]">${entries.length ? 'No fragrances match your current filters.' : 'No fragrances in this section yet.'}</div>`;
+    if (moreEl) moreEl.classList.add('hidden');
+    return;
+  }
+
+  const visible = filtered.slice(0, friendViewState.limit);
+  listEl.innerHTML = visible.map(({ id: pid }) => {
+    const r = catalogById.get(pid);
+    const fit = items[pid];
+    const fsc = fScoreMap.get(pid);
+    const myIt = userState.items[pid];
+    const mySc = scoreMap.get(pid);
+    const colMeta = fit?.collection ? COL_MAP[fit.collection] : null;
+    const season = r ? getBestSeason(r) : null;
+    const occ = r ? getBestOccasion(r) : null;
+    const gender = r ? fVal(r, 'gender') : '';
+    const accords = r ? parsePipePairs(fVal(r, 'accords')).slice(0, 3) : [];
+
+    const quickActionHtml = myIt
+      ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-semibold border ${COL_MAP[myIt.collection]?.color || 'bg-[#F4F1EB] text-[#5C5850] border-[#E4E0D7]'}">${mySc ? `You: ${formatScore(mySc.score)}` : COL_MAP[myIt.collection]?.label || 'Saved'}</span>`
+      : `<button type="button" onclick="addToCollectionUnrated('${escapeHtml(pid)}', 'want')" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FDF5E6] text-[#9A6B19] border border-[#EDD8B1] hover:bg-[#FAECC8] transition">+ Want</button>`;
+
+    return `
+      <div class="bg-white rounded-2xl border border-[#E8E4DC] p-3.5 hover:border-[#D5CFC3] transition flex items-start sm:items-center justify-between gap-3">
+        <button type="button" onclick="openDetailModal('${escapeHtml(pid)}')" class="flex items-start gap-2.5 min-w-0 text-left flex-1 group">
+          ${fsc ? `<span class="font-serif-display font-bold text-sm text-[#6E6A61] w-8 shrink-0 pt-0.5">#${fsc.rank}</span>` : ''}
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-sm font-bold text-[#1C1B18] group-hover:text-[#0F5C5C] truncate">${r ? escapeHtml(fVal(r, 'name')) : 'Fragrance #' + escapeHtml(pid)}</span>
+              ${colMeta ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${colMeta.color}">${colMeta.label}</span>` : ''}
+            </div>
+            <div class="text-[11px] text-[#6E6A61] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              ${r ? `<span class="font-medium">${escapeHtml(fVal(r, 'brand'))}</span>` : ''}
+              ${r && fVal(r, 'year') ? `<span>· ${escapeHtml(fVal(r, 'year'))}</span>` : ''}
+              ${gender ? `<span class="capitalize">· ${escapeHtml(gender)}</span>` : ''}
+              ${season ? `<span>· ${season.label}</span>` : ''}
+              ${occ ? `<span>· ${occ.label}</span>` : ''}
+            </div>
+            ${accords.length ? `<div class="flex flex-wrap gap-1 mt-1.5">${accords.map(a => `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white/95" style="background:${accordColor(a.name)}">${escapeHtml(a.name)}</span>`).join('')}</div>` : ''}
+            ${fit?.note ? `<p class="text-[11px] text-[#5C5850] italic mt-1.5 line-clamp-2">“${escapeHtml(fit.note)}”</p>` : ''}
+          </div>
+        </button>
+        <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+          ${quickActionHtml}
+          <button type="button" onclick="openDetailModal('${escapeHtml(pid)}')" class="beli-badge beli-badge-sm ${fsc ? getScoreClass(fsc.score) : 'score-none'}">${fsc ? formatScore(fsc.score) : '—'}</button>
+        </div>
       </div>`;
-  } catch (e) {
-    body.innerHTML = `<p class="text-xs text-[#8A857B]">Could not load friend's shelf.</p>`;
+  }).join('');
+
+  if (moreEl) {
+    const remaining = filtered.length - visible.length;
+    if (remaining > 0) {
+      moreEl.classList.remove('hidden');
+      moreEl.innerHTML = `<button type="button" onclick="loadMoreFriendShelf()" class="px-5 py-2 rounded-full text-xs font-semibold bg-white border border-[#D8D3C8] text-[#1C1B18] hover:border-[#0F5C5C] hover:text-[#0F5C5C] transition">Show More (${remaining} remaining)</button>`;
+    } else {
+      moreEl.classList.add('hidden');
+    }
   }
 }
 
@@ -4722,7 +5448,12 @@ function renderMyProfileTab() {
   document.getElementById('my-prof-avatar').style.background = p.avatar_color || '#0F5C5C';
   document.getElementById('my-prof-avatar').textContent = (p.display_name || p.username || 'S')[0].toUpperCase();
   document.getElementById('my-prof-heading').textContent = p.display_name || (p.username ? '@' + p.username : 'Your Social Profile');
-  document.getElementById('my-prof-stats').textContent = `${myFollowerIds.size} followers · ${myFollowingIds.size} following · ${scoreMap.size} ranked`;
+  const myId = currentUser?.id || 'me';
+  document.getElementById('my-prof-stats').innerHTML = `
+    <button type="button" onclick="openFollowsModal('${escapeHtml(myId)}', 'followers')" class="hover:text-[#0F5C5C] hover:underline font-semibold">${myFollowerIds.size} followers</button>
+    ·
+    <button type="button" onclick="openFollowsModal('${escapeHtml(myId)}', 'following')" class="hover:text-[#0F5C5C] hover:underline font-semibold">${myFollowingIds.size} following</button>
+    · ${scoreMap.size} ranked`;
 }
 
 async function saveMyProfile(e) {
@@ -4760,11 +5491,10 @@ async function loadFriendsTakesForDetail(perfumeId) {
 
   try {
     const fIds = [...myFollowingIds];
-    const [libRes, profRes] = await Promise.all([
+    const [libRes] = await Promise.all([
       sbClient.from('user_library').select('user_id, items, tiers').in('user_id', fIds),
-      sbClient.from('profiles').select('*').in('user_id', fIds)
+      ensureProfilesCached(fIds)
     ]);
-    (profRes.data || []).forEach(p => profilesCache.set(p.user_id, p));
 
     const takes = [];
     (libRes.data || []).forEach(lib => {
@@ -4789,7 +5519,7 @@ async function loadFriendsTakesForDetail(perfumeId) {
       <div class="space-y-2">
         ${takes.map(t => `
           <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[#FAF9F6] border border-[#EFECE6]">
-            <button onclick="closeDetailModal(); openFriendProfile('${t.user_id}')" class="min-w-0 text-left flex-1">
+            <button type="button" onclick="closeDetailModal(); openFriendProfile('${escapeHtml(t.user_id)}')" class="min-w-0 text-left flex-1">
               <div class="text-xs font-bold text-[#1C1B18]">@${escapeHtml(t.prof?.username || 'friend')} ${t.it?.collection && COL_MAP[t.it.collection] ? `<span class="font-normal text-[#6E6A61]">· ${COL_MAP[t.it.collection].label}</span>` : ''}</div>
               ${t.it?.note ? `<div class="text-[11px] text-[#6E6A61] italic truncate">“${escapeHtml(t.it.note)}”</div>` : ''}
             </button>
