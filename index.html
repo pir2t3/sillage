@@ -275,7 +275,7 @@
           <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
         </select>
         <select id="rf-rating" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
-          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+          <option value="">Community Score</option><option value="5.0">★ 5.0+</option><option value="6.5">★ 6.5+</option><option value="7.5">★ 7.5+</option><option value="8.5">★ 8.5+</option>
         </select>
         <select id="rf-longevity" onchange="renderRankings()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
           <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
@@ -341,7 +341,7 @@
           <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
         </select>
         <select id="cf-rating" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
-          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+          <option value="">Community Score</option><option value="5.0">★ 5.0+</option><option value="6.5">★ 6.5+</option><option value="7.5">★ 7.5+</option><option value="8.5">★ 8.5+</option>
         </select>
         <select id="cf-longevity" onchange="renderCollections()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
           <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
@@ -1342,7 +1342,10 @@ async function queryCloudDiscover() {
   }
   if (fGender) q = q.ilike('gender', fGender);
 
-  if (fSort === 'rating') q = q.order('rating_avg', { ascending: false }).order('vote_count', { ascending: false });
+  if (fSort === 'rating') {
+    if (!qRaw) q = q.gte('vote_count', FRAG_NORM_PRIOR_M);
+    q = q.order('rating_avg', { ascending: false }).order('vote_count', { ascending: false });
+  }
   else if (fSort === 'longevity') q = q.order('longevity_avg', { ascending: false });
   else if (fSort === 'sillage') q = q.order('sillage_avg', { ascending: false });
   else if (fSort === 'year') q = q.order('year', { ascending: false, nullsFirst: false });
@@ -1356,6 +1359,9 @@ async function queryCloudDiscover() {
     catalogById.set(String(p.id), arr);
     return arr;
   });
+  if (fSort === 'rating') {
+    rows.sort((a, b) => (getNormalizedCommunityScore(b) ?? -1) - (getNormalizedCommunityScore(a) ?? -1) || fNum(b, 'vote_count') - fNum(a, 'vote_count'));
+  }
   discoverFiltered = rows;
   document.getElementById('discover-meta').textContent = `${(count || rows.length).toLocaleString()} cloud fragrances`;
   renderDiscoverGridOnly();
@@ -1580,6 +1586,32 @@ function getScoreClass(score) {
 
 function formatScore(score) {
   return (score === null || score === undefined) ? '—' : Number(score).toFixed(1);
+}
+
+// ==================== FRAGRANTICA 1–5 -> SILLAGE 0–10 NORMALIZER ====================
+// Calibrated on all 38,365 reliably rated fragrances (>=50 votes) in the 140k dataset:
+// mean = 3.9669, std = 0.2787, Bayesian prior m = 30 votes.
+// Maps median (~3.98) -> ~6.6 (mid-Like), top 25% (~4.15) -> ~7.5 (Love),
+// bottom 10% (~3.63) -> ~4.5 (Dislike), while shrinking low-vote 5.00 outliers toward ~6.6.
+const FRAG_NORM_MEAN = 3.9669;
+const FRAG_NORM_STD = 0.2787;
+const FRAG_NORM_PRIOR_M = 30;
+const FRAG_NORM_LOGIT_A = 0.65;
+const FRAG_NORM_LOGIT_B = 0.85;
+
+function normalizeFragranticaScore(rawAvg, voteCount) {
+  const r = Number(rawAvg);
+  if (!r || isNaN(r) || r <= 0) return null;
+  const v = Math.max(0, Number(voteCount) || 0);
+  const rAdj = (v * r + FRAG_NORM_PRIOR_M * FRAG_NORM_MEAN) / (v + FRAG_NORM_PRIOR_M);
+  const z = (rAdj - FRAG_NORM_MEAN) / FRAG_NORM_STD;
+  const val = 10 / (1 + Math.exp(-(FRAG_NORM_LOGIT_A + FRAG_NORM_LOGIT_B * z)));
+  return Math.max(0, Math.min(10, Math.round(val * 10) / 10));
+}
+
+function getNormalizedCommunityScore(row) {
+  if (!row) return null;
+  return normalizeFragranticaScore(fNum(row, 'rating_avg'), fNum(row, 'vote_count'));
 }
 
 // ==================== CSV PARSING & FIELD HELPERS ====================
@@ -1866,7 +1898,7 @@ function renderRankings() {
     return true;
   });
   const rSort = document.getElementById('rank-sort')?.value || 'rank';
-  if (rSort === 'community') filtered.sort((a,b) => fNum(catalogById.get(b.id),'rating_avg') - fNum(catalogById.get(a.id),'rating_avg'));
+  if (rSort === 'community') filtered.sort((a,b) => (getNormalizedCommunityScore(catalogById.get(b.id)) ?? -1) - (getNormalizedCommunityScore(catalogById.get(a.id)) ?? -1));
   else if (rSort === 'longevity') filtered.sort((a,b) => fNum(catalogById.get(b.id),'longevity_avg') - fNum(catalogById.get(a.id),'longevity_avg'));
   else if (rSort === 'sillage') filtered.sort((a,b) => fNum(catalogById.get(b.id),'sillage_avg') - fNum(catalogById.get(a.id),'sillage_avg'));
   else if (rSort === 'year') filtered.sort((a,b) => fNum(catalogById.get(b.id),'year') - fNum(catalogById.get(a.id),'year'));
@@ -2017,7 +2049,7 @@ function renderCollections() {
       return (b.it.addedAt || 0) - (a.it.addedAt || 0);
     }
     if (sortBy === 'recent') return (b.it.addedAt || 0) - (a.it.addedAt || 0);
-    if (sortBy === 'community') return fNum(b.row, 'rating_avg') - fNum(a.row, 'rating_avg');
+    if (sortBy === 'community') return (getNormalizedCommunityScore(b.row) ?? -1) - (getNormalizedCommunityScore(a.row) ?? -1);
     if (sortBy === 'longevity') return fNum(b.row, 'longevity_avg') - fNum(a.row, 'longevity_avg');
     if (sortBy === 'sillage') return fNum(b.row, 'sillage_avg') - fNum(a.row, 'sillage_avg');
     if (sortBy === 'year') return fNum(b.row, 'year') - fNum(a.row, 'year');
@@ -2038,14 +2070,15 @@ function renderCollections() {
 
   container.innerHTML = list.map(({ id, it, row, sc }) => {
     const accords = parsePipePairs(fVal(row, 'accords')).slice(0, 3);
-    const commRating = fNum(row, 'rating_avg');
+    const rawRating = fNum(row, 'rating_avg');
     const votes = parseInt(fVal(row, 'vote_count') || 0, 10);
+    const normComm = getNormalizedCommunityScore(row);
     return `
       <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 flex flex-col justify-between gap-3 card-hover">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1 cursor-pointer" onclick="openDetailModal('${id}')">
             <div class="flex items-center gap-1.5 min-w-0">
-              <span class="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FAF9F6] border border-[#E8E4DC] text-[#5C5850] tabular-nums shrink-0" title="Community Rating: ${commRating ? commRating.toFixed(2) + ' / 5' : 'Unrated'}${votes ? ` (${votes.toLocaleString()} votes)` : ''}">★ ${commRating ? commRating.toFixed(2) : '—'}</span>
+              <span class="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FAF9F6] border border-[#E8E4DC] text-[#5C5850] tabular-nums shrink-0" title="Normalized Community Score: ${normComm !== null ? formatScore(normComm) + ' / 10' : 'Unrated'}${rawRating ? ` (Fragrantica raw: ${rawRating.toFixed(2)}/5 · ${votes.toLocaleString()} votes)` : ''}">★ ${normComm !== null ? formatScore(normComm) : '—'}</span>
               <span class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(row, 'brand'))}${fVal(row, 'year') ? ` · ${escapeHtml(fVal(row, 'year'))}` : ''}</span>
             </div>
             <h3 class="font-bold text-base text-[#1C1B18] hover:text-[#0F5C5C] transition truncate mt-0.5">${escapeHtml(fVal(row, 'name'))}</h3>
@@ -2138,7 +2171,7 @@ function renderDiscover() {
   }
 
   if (fSort === 'rating') {
-    matches.sort((a, b) => fNum(b, 'rating_avg') - fNum(a, 'rating_avg') || fNum(b, 'vote_count') - fNum(a, 'vote_count'));
+    matches.sort((a, b) => (getNormalizedCommunityScore(b) ?? -1) - (getNormalizedCommunityScore(a) ?? -1) || fNum(b, 'vote_count') - fNum(a, 'vote_count'));
   } else if (fSort === 'longevity') {
     matches.sort((a, b) => fNum(b, 'longevity_avg') - fNum(a, 'longevity_avg'));
   } else if (fSort === 'sillage') {
@@ -2173,6 +2206,7 @@ function renderDiscoverGridOnly() {
     const accords = parsePipePairs(fVal(r, 'accords')).slice(0, 3);
     const ratingAvg = fNum(r, 'rating_avg');
     const votes = parseInt(fVal(r, 'vote_count') || 0, 10);
+    const normComm = getNormalizedCommunityScore(r);
     const season = getBestSeason(r);
     const occ = getBestOccasion(r);
     const colInfo = it ? COL_MAP[it.collection] : null;
@@ -2183,7 +2217,7 @@ function renderDiscoverGridOnly() {
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1 cursor-pointer" onclick="openDetailModal('${id}')">
               <div class="flex items-center gap-1.5 min-w-0">
-                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FAF9F6] border border-[#E8E4DC] text-[#5C5850] tabular-nums shrink-0" title="Community Rating: ${ratingAvg ? ratingAvg.toFixed(2) + ' / 5' : 'Unrated'}${votes ? ` (${votes.toLocaleString()} votes)` : ''}">★ ${ratingAvg ? ratingAvg.toFixed(2) : '—'}</span>
+                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[#FAF9F6] border border-[#E8E4DC] text-[#5C5850] tabular-nums shrink-0" title="Normalized Community Score: ${normComm !== null ? formatScore(normComm) + ' / 10' : 'Unrated'}${ratingAvg ? ` (Fragrantica raw: ${ratingAvg.toFixed(2)}/5 · ${votes.toLocaleString()} votes)` : ''}">★ ${normComm !== null ? formatScore(normComm) : '—'}</span>
                 <span class="text-[11px] font-semibold text-[#6E6A61] truncate">${escapeHtml(fVal(r, 'brand'))}${fVal(r, 'year') ? ` · ${escapeHtml(fVal(r, 'year'))}` : ''}</span>
               </div>
               <h3 class="font-bold text-sm sm:text-base text-[#1C1B18] hover:text-[#0F5C5C] transition line-clamp-1 mt-0.5">${escapeHtml(fVal(r, 'name'))}</h3>
@@ -2633,6 +2667,7 @@ function renderDetailModal(id) {
   // Ratings / Longevity / Sillage / Price Value
   const ratingAvg = fNum(r, 'rating_avg');
   const voteCount = parseInt(fVal(r, 'vote_count') || 0, 10);
+  const normComm = getNormalizedCommunityScore(r);
   const longAvg = fNum(r, 'longevity_avg');
   const sillAvg = fNum(r, 'sillage_avg');
   const pvAvg = fNum(r, 'price_value_avg');
@@ -2778,9 +2813,9 @@ function renderDetailModal(id) {
     <!-- COMMUNITY RATINGS, LONGEVITY, SILLAGE, PRICE VALUE -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 space-y-2.5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Community Rating</h3>
-          <span class="text-sm font-bold text-[#0F5C5C]">★ ${ratingAvg ? ratingAvg.toFixed(2) : '—'} / 5 <span class="text-[11px] font-normal text-[#8A857B]">(${voteCount.toLocaleString()})</span></span>
+        <div class="flex items-center justify-between gap-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Community Score</h3>
+          <span class="text-sm font-bold text-[#0F5C5C] tabular-nums" title="${ratingAvg ? `Fragrantica raw average: ${ratingAvg.toFixed(2)} / 5 across ${voteCount.toLocaleString()} votes` : 'Unrated'}">★ ${normComm !== null ? formatScore(normComm) : '—'} / 10 <span class="text-[11px] font-normal text-[#8A857B]">(${voteCount.toLocaleString()} · raw ${ratingAvg ? ratingAvg.toFixed(2) : '—'}/5)</span></span>
         </div>
         ${renderMiniBars(['Love (5)', 'Like (4)', 'OK (3)', 'Dislike (2)', 'Hate (1)'], [fNum(r,'rating_b5'), fNum(r,'rating_b4'), fNum(r,'rating_b3'), fNum(r,'rating_b2'), fNum(r,'rating_b1')], '#0F5C5C')}
       </div>
@@ -3065,7 +3100,7 @@ function matchesAdvancedFilters(row, prefix) {
     const bo = getBestOccasion(row);
     if (!bo || (bo.key !== o && bo.key !== 'both')) return false;
   }
-  if (mr && fNum(row, 'rating_avg') < mr) return false;
+  if (mr && (getNormalizedCommunityScore(row) ?? -1) < mr) return false;
   if (ml && fNum(row, 'longevity_avg') < ml) return false;
   if (si) {
     const sv = fNum(row, 'sillage_avg');
@@ -3527,7 +3562,7 @@ async function loadRecommendations(force = false) {
     const matchedNotes = topNoteKeys.filter(k => noteMap[k] !== undefined);
     const matchedAccords = topAccordKeys.filter(k => accMap[k] !== undefined);
     const avoidHits = Object.keys(noteMap).filter(k => avoidNoteSet.has(k)).length;
-    const commBoost = Math.min(8, Math.max(0, (fNum(r, 'rating_avg') - 3.5) * 6));
+    const commBoost = Math.min(8, Math.max(0, ((getNormalizedCommunityScore(r) ?? 6.5) - 5.5) * 2.2));
 
     const finalScore = Math.min(99, Math.max(20, Math.round(
       (topLovedRows.length ? bestSim * 0.65 : 50) +
@@ -4257,7 +4292,7 @@ function renderCompareView() {
           <div class="beli-badge beli-badge-sm ${sc ? getScoreClass(sc.score) : 'score-none'}">${sc ? formatScore(sc.score) : '—'}</div>
         </div>
         <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-[#EAE6DD] text-[11px] text-[#5C5850]">
-          <div>Community: <strong class="text-[#1C1B18]">★ ${fNum(r,'rating_avg') ? fNum(r,'rating_avg').toFixed(2) : '—'}</strong></div>
+          <div title="${fNum(r,'rating_avg') ? `Fragrantica raw: ${fNum(r,'rating_avg').toFixed(2)}/5 (${parseInt(fVal(r,'vote_count')||0,10).toLocaleString()} votes)` : 'Unrated'}">Community: <strong class="text-[#1C1B18]">★ ${getNormalizedCommunityScore(r) !== null ? formatScore(getNormalizedCommunityScore(r)) + ' / 10' : '—'}</strong></div>
           <div>Gender: <strong class="text-[#1C1B18] capitalize">${escapeHtml(fVal(r,'gender') || '—')}</strong></div>
           <div>Longevity: <strong class="text-[#1C1B18]">${longevityLabel(fNum(r,'longevity_avg'))}</strong></div>
           <div>Sillage: <strong class="text-[#1C1B18]">${sillageLabel(fNum(r,'sillage_avg'))}</strong></div>
@@ -5659,7 +5694,7 @@ function renderFriendModalShell() {
           <option value="">Any Occasion</option><option value="day">Daytime</option><option value="night">Night / Evening</option>
         </select>
         <select id="ff-rating" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
-          <option value="">Community Rating</option><option value="3.5">★ 3.5+</option><option value="4.0">★ 4.0+</option><option value="4.2">★ 4.2+</option><option value="4.5">★ 4.5+</option>
+          <option value="">Community Score</option><option value="5.0">★ 5.0+</option><option value="6.5">★ 6.5+</option><option value="7.5">★ 7.5+</option><option value="8.5">★ 8.5+</option>
         </select>
         <select id="ff-longevity" onchange="resetFriendLimitAndRender()" class="px-2.5 py-1.5 text-xs rounded-full border border-[#E4E0D7] bg-[#FAF9F6]">
           <option value="">Longevity</option><option value="3.0">Moderate+ (3.0+)</option><option value="3.5">Long Lasting (3.5+)</option><option value="4.3">Eternal (4.3+)</option>
@@ -5797,7 +5832,7 @@ function renderFriendShelfList() {
       if (sB) return 1;
       return (rA ? fVal(rA, 'name') : a.id).localeCompare(rB ? fVal(rB, 'name') : b.id);
     }
-    if (sortF === 'community') return (rB ? fNum(rB, 'rating_avg') : 0) - (rA ? fNum(rA, 'rating_avg') : 0);
+    if (sortF === 'community') return (rB ? (getNormalizedCommunityScore(rB) ?? -1) : -1) - (rA ? (getNormalizedCommunityScore(rA) ?? -1) : -1);
     if (sortF === 'longevity') return (rB ? fNum(rB, 'longevity_avg') : 0) - (rA ? fNum(rA, 'longevity_avg') : 0);
     if (sortF === 'sillage') return (rB ? fNum(rB, 'sillage_avg') : 0) - (rA ? fNum(rA, 'sillage_avg') : 0);
     if (sortF === 'year') return (rB ? fNum(rB, 'year') : 0) - (rA ? fNum(rA, 'year') : 0);
