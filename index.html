@@ -1009,7 +1009,7 @@
       <!-- Personal Rankings Backup -->
       <div class="bg-white rounded-2xl border border-[#E8E4DC] p-4 space-y-3">
         <div class="text-xs font-bold uppercase tracking-wider text-[#6E6A61]">Personal Collections & Rankings Backup</div>
-        <p class="text-xs text-[#6E6A61]">Your collections, binary rankings, scores, and notes auto-save to browser storage. Export a JSON backup anytime to transfer devices.</p>
+        <p class="text-xs text-[#6E6A61]">Your collections, binary rankings, scores, and notes auto-sync to your cloud account (never cached in browser storage across accounts). Export a JSON backup anytime.</p>
         <div class="flex flex-wrap gap-2">
           <button onclick="exportBackupJSON()" class="px-4 py-2 rounded-full text-xs font-semibold bg-[#0F5C5C] text-white hover:bg-[#0B4747] transition">Export JSON Backup</button>
           <label class="px-4 py-2 rounded-full text-xs font-semibold bg-white border border-[#D8D3C8] text-[#1C1B18] hover:border-[#0F5C5C] cursor-pointer transition">
@@ -1241,6 +1241,85 @@ function updateAuthBanner() {
   }
 }
 
+function getAuthRedirectUrl() {
+  try {
+    const loc = window.location;
+    if (loc && (loc.protocol === 'http:' || loc.protocol === 'https:')) {
+      let path = loc.pathname || '/';
+      if (!path.endsWith('/') && !path.split('/').pop().includes('.')) path += '/';
+      return `${loc.origin}${path}`;
+    }
+  } catch (e) {}
+  return undefined;
+}
+
+function clearLegacyUserCache() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (e) {}
+}
+
+function resetAccountState() {
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = null;
+  clearLegacyUserCache();
+
+  // Wipe personal collections, rankings, scores & wear logs
+  userState = {
+    items: {},
+    tiers: { love: [], like: [], dislike: [] },
+    wearLogs: []
+  };
+  recomputeScores();
+
+  // Reset per-account UI & session caches
+  rankSession = null;
+  detailOpenId = null;
+  sotdSelectedId = null;
+  cmpSelected = { a: null, b: null };
+  shelfSimTargetId = null;
+  shelfSimResults = [];
+  lastFilteredRankIds = [];
+  lastFilteredColIds = [];
+  cachedRecs = null;
+
+  // Reset per-account social caches
+  myProfile = null;
+  myFollowingIds = new Set();
+  myFollowerIds = new Set();
+  selectedAvatarColor = '#0F5C5C';
+  feedPosts = [];
+  feedCursor = null;
+  feedHasMore = false;
+  feedLoading = false;
+  friendLibCache = new Map();
+  friendViewState = {
+    userId: null,
+    profile: null,
+    items: {},
+    tiers: { love: [], like: [], dislike: [] },
+    scoreMap: new Map(),
+    tab: 'ranked',
+    limit: FRIEND_SHELF_PAGE_SIZE,
+    followingCount: 0,
+    followerCount: 0,
+    compatPct: null
+  };
+  followsModalState = {
+    userId: null,
+    tab: 'following',
+    followingIds: [],
+    followerIds: [],
+    title: 'Connections'
+  };
+
+  // Close any open account-specific modals
+  ['rank-modal', 'detail-modal', 'friend-modal', 'follows-modal', 'similar-modal', 'random-modal', 'top5-modal'].forEach(mid => {
+    document.getElementById(mid)?.classList.add('hidden');
+  });
+  updateFollowCountsUI();
+}
+
 async function handleAuthSubmit(e) {
   e.preventDefault();
   const errEl = document.getElementById('auth-error');
@@ -1262,12 +1341,17 @@ async function handleAuthSubmit(e) {
 
   try {
     if (authMode === 'signup') {
-      const { data, error } = await sbClient.auth.signUp({ email, password });
+      const emailRedirectTo = getAuthRedirectUrl();
+      const { data, error } = await sbClient.auth.signUp({
+        email,
+        password,
+        options: emailRedirectTo ? { emailRedirectTo } : undefined
+      });
       if (error) throw error;
       if (data.session) {
         await onSignedIn(data.user);
       } else {
-        okEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+        okEl.textContent = 'Account created! Check your email and click the confirmation link to return here and sign in.';
         okEl.classList.remove('hidden');
       }
     } else {
@@ -1318,12 +1402,15 @@ async function ensurePerfumesInCatalog(ids) {
 }
 
 async function onSignedIn(user) {
+  // Always wipe any previous account or preview data before loading the signed-in account
+  resetAccountState();
+
   currentUser = user;
   document.getElementById('auth-gate').classList.add('hidden');
   document.getElementById('account-label').textContent = user.email.split('@')[0];
   document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#136F63]';
 
-  // Load user's cloud library from Supabase
+  // Load user's cloud library strictly from Supabase (empty state if brand-new account)
   try {
     let { data, error } = await sbClient
       .from('user_library')
@@ -1344,7 +1431,7 @@ async function onSignedIn(user) {
           like: Array.isArray(data.tiers?.like) ? data.tiers.like : [],
           dislike: Array.isArray(data.tiers?.dislike) ? data.tiers.dislike : []
         },
-        wearLogs: Array.isArray(data.wear_logs) ? data.wear_logs : (userState.wearLogs || [])
+        wearLogs: Array.isArray(data.wear_logs) ? data.wear_logs : []
       };
       recomputeScores();
       // Fetch any perfume rows referenced in user's library or tiers that aren't in local map
@@ -1374,36 +1461,66 @@ async function onSignedIn(user) {
   showToast(`Signed in as ${user.email}`);
 }
 
+async function performCloudSave(targetUserId, snapshot) {
+  if (!sbClient || !targetUserId) return;
+  try {
+    const { error: upErr } = await sbClient.from('user_library').upsert({
+      user_id: targetUserId,
+      items: snapshot.items,
+      tiers: snapshot.tiers,
+      wear_logs: snapshot.wearLogs,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (upErr) {
+      await sbClient.from('user_library').upsert({
+        user_id: targetUserId,
+        items: snapshot.items,
+        tiers: snapshot.tiers,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+    }
+    if (currentUser && currentUser.id === targetUserId) {
+      document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#136F63]';
+    }
+  } catch (e) {
+    console.warn('Cloud save failed:', e);
+    if (currentUser && currentUser.id === targetUserId) {
+      document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#C25447]';
+    }
+  }
+}
+
+async function flushCloudSave() {
+  if (!cloudSaveTimer || !sbClient || !currentUser) return;
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = null;
+  const uid = currentUser.id;
+  const snapshot = {
+    items: userState.items,
+    tiers: userState.tiers,
+    wearLogs: ensureWearLogs()
+  };
+  await performCloudSave(uid, snapshot);
+}
+
 function scheduleCloudSave() {
   if (!sbClient || !currentUser) return;
+  const uid = currentUser.id;
   document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#C48B2C] animate-pulse';
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(async () => {
-    try {
-      const { error: upErr } = await sbClient.from('user_library').upsert({
-        user_id: currentUser.id,
-        items: userState.items,
-        tiers: userState.tiers,
-        wear_logs: ensureWearLogs(),
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
-      if (upErr) {
-        await sbClient.from('user_library').upsert({
-          user_id: currentUser.id,
-          items: userState.items,
-          tiers: userState.tiers,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
-      }
-      document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#136F63]';
-    } catch (e) {
-      console.warn('Cloud save failed:', e);
-      document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#C25447]';
-    }
+    cloudSaveTimer = null;
+    if (!currentUser || currentUser.id !== uid) return;
+    await performCloudSave(uid, {
+      items: userState.items,
+      tiers: userState.tiers,
+      wearLogs: ensureWearLogs()
+    });
   }, 350);
 }
 
 function enterPreviewMode() {
+  if (!currentUser) resetAccountState();
   document.getElementById('auth-gate').classList.add('hidden');
   document.getElementById('account-label').textContent = 'Sign In';
   document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#C48B2C]';
@@ -1412,15 +1529,22 @@ function enterPreviewMode() {
 
 async function openAccountOrAuth() {
   if (currentUser && sbClient) {
-    // Sign out option in toast-safe inline confirmation via auth gate or direct sign-out modal
-    await sbClient.auth.signOut();
+    // Save any pending edit for the outgoing account, then sign out and wipe local state completely
+    await flushCloudSave();
+    try { await sbClient.auth.signOut(); } catch (e) {}
     currentUser = null;
+    resetAccountState();
     document.getElementById('account-label').textContent = 'Sign In';
     document.getElementById('sync-dot').className = 'w-2 h-2 rounded-full bg-[#C48B2C]';
+    const pwEl = document.getElementById('auth-password');
+    if (pwEl) pwEl.value = '';
+    setAuthMode('signin');
+    refreshCurrentView();
     showToast('Signed out');
     updateAuthBanner();
     document.getElementById('auth-gate').classList.remove('hidden');
   } else {
+    setAuthMode('signin');
     updateAuthBanner();
     document.getElementById('auth-gate').classList.remove('hidden');
   }
@@ -1566,36 +1690,19 @@ function renderSettingsView() {
 }
 
 function loadUserState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.items && parsed.tiers) {
-        userState = {
-          items: parsed.items || {},
-          tiers: {
-            love: Array.isArray(parsed.tiers.love) ? parsed.tiers.love : [],
-            like: Array.isArray(parsed.tiers.like) ? parsed.tiers.like : [],
-            dislike: Array.isArray(parsed.tiers.dislike) ? parsed.tiers.dislike : []
-          },
-          wearLogs: Array.isArray(parsed.wearLogs) ? parsed.wearLogs : []
-        };
-      }
-    }
-  } catch (e) {
-    console.warn('localStorage unavailable, using in-memory state:', e);
-  }
+  // User library data lives in Supabase cloud accounts; purge any legacy localStorage cache
+  clearLegacyUserCache();
+  userState = {
+    items: {},
+    tiers: { love: [], like: [], dislike: [] },
+    wearLogs: []
+  };
   recomputeScores();
 }
 
 function saveUserState() {
   recomputeScores();
   scheduleCloudSave();
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
-  } catch (e) {
-    console.warn('Could not persist to localStorage:', e);
-  }
 }
 
 function openIDB() {
@@ -1703,17 +1810,61 @@ async function boot() {
   document.getElementById('app-main').classList.remove('hidden');
   setView('rankings');
 
+  // Inspect URL for Supabase email confirmation / auth redirect params BEFORE initializing session
+  const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+  const searchParams = new URLSearchParams(window.location.search || '');
+  const authErrorMsg = hashParams.get('error_description') || hashParams.get('error') || searchParams.get('error_description') || searchParams.get('error');
+  const authCode = searchParams.get('code');
+  const authType = (hashParams.get('type') || searchParams.get('type') || '').toLowerCase();
+  const isEmailConfirmCallback = Boolean(
+    authCode ||
+    authType === 'signup' ||
+    authType === 'email' ||
+    authType === 'invite' ||
+    (hashParams.has('access_token') && authType)
+  );
+
   initSupabaseClient();
   updateAuthBanner();
   if (sbClient) {
     try {
-      const { data: { session } } = await sbClient.auth.getSession();
-      if (session?.user) {
-        await onSignedIn(session.user);
-      } else {
+      if (authErrorMsg) {
+        try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
+        resetAccountState();
+        setAuthMode('signin');
+        const errEl = document.getElementById('auth-error');
+        if (errEl) {
+          errEl.textContent = authErrorMsg.replace(/\+/g, ' ');
+          errEl.classList.remove('hidden');
+        }
         document.getElementById('auth-gate').classList.remove('hidden');
+      } else if (isEmailConfirmCallback) {
+        if (authCode) {
+          try { await sbClient.auth.exchangeCodeForSession(authCode); } catch (e) {}
+        }
+        // Clean auth tokens/codes from the URL and return user cleanly to the login screen
+        try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
+        try { await sbClient.auth.signOut(); } catch (e) {}
+        currentUser = null;
+        resetAccountState();
+        setAuthMode('signin');
+        const okEl = document.getElementById('auth-success');
+        if (okEl) {
+          okEl.textContent = 'Email confirmed! You can now sign in with your email and password.';
+          okEl.classList.remove('hidden');
+        }
+        document.getElementById('auth-gate').classList.remove('hidden');
+      } else {
+        const { data: { session } } = await sbClient.auth.getSession();
+        if (session?.user) {
+          await onSignedIn(session.user);
+        } else {
+          resetAccountState();
+          document.getElementById('auth-gate').classList.remove('hidden');
+        }
       }
     } catch (e) {
+      resetAccountState();
       document.getElementById('auth-gate').classList.remove('hidden');
     }
   } else {
@@ -3265,7 +3416,7 @@ function confirmResetUser() {
 }
 
 function executeResetUser() {
-  userState = { items: {}, tiers: { love: [], like: [], dislike: [] } };
+  userState = { items: {}, tiers: { love: [], like: [], dislike: [] }, wearLogs: [] };
   saveUserState();
   document.getElementById('reset-confirm-bar').classList.add('hidden');
   refreshCurrentView();
